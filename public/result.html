@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HR プロファイリング</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link href="/styles/main.css" rel="stylesheet" />
+    <style>
+      :root {
+        --primary-color: #6a0dad;
+        --secondary-color: #9370db;
+        --accent-color: #ffd700;
+        --text-color: #333;
+        --light-bg: #f8f5ff;
+      }
+
+      body {
+        background-color: #f0e6ff;
+        background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1MCIgaGVpZ2h0PSI1MCI+CjxyZWN0IHdpZHRoPSI1MCIgaGVpZ2h0PSI1MCIgZmlsbD0ibm9uZSIvPgo8Y2lyY2xlIGN4PSIzIiBjeT0iNCIgcj0iMC43IiBmaWxsPSJyZ2JhKDE2MSwgMTAyLCAyNTUsIDAuMTUpIi8+CjxjaXJjbGUgY3g9IjEzIiBjeT0iMTQiIHI9IjAuNyIgZmlsbD0icmdiYSgxNjEsIDEwMiwgMjU1LCAwLjE1KSIvPgo8Y2lyY2xlIGN4PSIyMyIgY3k9IjI0IiByPSIwLjciIGZpbGw9InJnYmEoMTYxLCAxMDIsIDI1NSwgMC4xNSkiLz4KPGNpcmNsZSBjeD0iMzMiIGN5PSIzNCIgcj0iMC43IiBmaWxsPSJyZ2JhKDE2MSwgMTAyLCAyNTUsIDAuMTUpIi8+CjxjaXJjbGUgY3g9IjQzIiBjeT0iNDQiIHI9IjAuNyIgZmlsbD0icmdiYSgxNjEsIDEwMiwgMjU1LCAwLjE1KSIvPgo8L3N2Zz4=');
+        color: var(--text-color);
+        font-family: 'Helvetica Neue', Arial, sans-serif;
+      }
+
+      .container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 2rem;
+      }
+
+      .result-header {
+        text-align: center;
+        margin-bottom: 2rem;
+        position: relative;
+      }
+
+      .result-title {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: var(--primary-color);
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        margin-bottom: 0.5rem;
+      }
+
+      .result-subtitle {
+        font-size: 1.2rem;
+        color: var(--secondary-color);
+      }
+
+      .section {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .section-title {
+        font-size: 1.8rem;
+        color: var(--primary-color);
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid var(--accent-color);
+        display: flex;
+        align-items: center;
+      }
+
+      .section-title i {
+        margin-right: 10px;
+        color: var(--accent-color);
+      }
+
+      .sub-section {
+        margin: 1.5rem 0;
+        padding: 1rem;
+        background: var(--light-bg);
+        border-radius: 10px;
+        border-left: 4px solid var(--secondary-color);
+      }
+
+      .sub-section-title {
+        font-size: 1.3rem;
+        color: var(--primary-color);
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+      }
+
+      .sub-section-title i {
+        margin-right: 8px;
+        color: var(--secondary-color);
+      }
+
+      .rating-card {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-top: 1rem;
+      }
+
+      .rating-item {
+        flex: 1;
+        min-width: 250px;
+        background: white;
+        padding: 1rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        border-top: 3px solid var(--secondary-color);
+      }
+
+      .rating-title {
+        font-size: 1.1rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+        color: var(--primary-color);
+      }
+
+      .rating-stars {
+        color: var(--accent-color);
+        margin-bottom: 0.5rem;
+      }
+
+      .content-text {
+        line-height: 1.6;
+      }
+
+      .occupation-item {
+        background: var(--light-bg);
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        border-left: 4px solid var(--accent-color);
+      }
+
+      .occupation-title {
+        font-weight: bold;
+        color: var(--primary-color);
+        margin-bottom: 0.5rem;
+      }
+
+      .btn {
+        display: inline-block;
+        padding: 0.8rem 1.5rem;
+        border-radius: 30px;
+        text-decoration: none;
+        font-weight: bold;
+        transition: all 0.3s ease;
+      }
+
+      .btn-primary {
+        background: var(--primary-color);
+        color: white;
+        box-shadow: 0 4px 10px rgba(106, 13, 173, 0.3);
+      }
+
+      .btn-primary:hover {
+        background: var(--secondary-color);
+        transform: translateY(-2px);
+      }
+
+      footer {
+        text-align: center;
+        padding: 2rem 0;
+        color: var(--secondary-color);
+      }
+
+      .mystic-decoration {
+        position: absolute;
+        opacity: 0.05;
+        z-index: -1;
+      }
+
+      .mystic-moon {
+        top: -10px;
+        right: -10px;
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        background: var(--secondary-color);
+      }
+
+      .mystic-star {
+        position: absolute;
+        width: 0;
+        height: 0;
+        border-right: 10px solid transparent;
+        border-bottom: 7px solid var(--accent-color);
+        border-left: 10px solid transparent;
+        transform: rotate(35deg);
+        opacity: 0.2;
+      }
+
+      .mystic-star:before {
+        content: '';
+        position: absolute;
+        width: 0;
+        height: 0;
+        border-bottom: 8px solid var(--accent-color);
+        border-left: 3px solid transparent;
+        border-right: 3px solid transparent;
+        top: -5px;
+        left: -6px;
+        transform: rotate(-35deg);
+      }
+
+      .mystic-star:after {
+        content: '';
+        position: absolute;
+        width: 0;
+        height: 0;
+        border-bottom: 8px solid var(--accent-color);
+        border-left: 3px solid transparent;
+        border-right: 3px solid transparent;
+        top: 0px;
+        left: -10px;
+        transform: rotate(-70deg);
+      }
+
+      .skill-tag {
+        display: inline-block;
+        background: var(--primary-color);
+        color: white;
+        padding: 0.3rem 0.8rem;
+        border-radius: 20px;
+        margin-right: 0.5rem;
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+      }
+
+      @media (max-width: 768px) {
+        .container {
+          padding: 1rem;
+        }
+
+        .result-title {
+          font-size: 2rem;
+        }
+
+        .section-title {
+          font-size: 1.5rem;
+        }
+      }
+
+      .loading {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 200px;
+      }
+
+      .loading-spinner {
+        width: 50px;
+        height: 50px;
+        border: 5px solid rgba(106, 13, 173, 0.1);
+        border-radius: 50%;
+        border-top-color: var(--primary-color);
+        animation: spin 1s ease-in-out infinite;
+      }
+
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <div class="result-header">
+        <div class="result-title">診断結果</div>
+        <div class="result-subtitle">HR プロファイリング</div>
+        <div class="mystic-decoration mystic-moon"></div>
+      </div>
+
+      <div id="result" class="result-content">
+        <div class="loading">
+          <div class="loading-spinner"></div>
+        </div>
+      </div>
+
+      <div class="text-center mt-8">
+        <a href="/" class="btn btn-primary">トップページに戻る</a>
+      </div>
+    </div>
+
+    <footer>
+      <p>© 2025 HR Profiling</p>
+    </footer>
+
+    <script>
+      function getStarRating(score) {
+        const fullStar = '<i class="fas fa-star"></i>';
+        const halfStar = '<i class="fas fa-star-half-alt"></i>';
+        const emptyStar = '<i class="far fa-star"></i>';
+
+        let stars = '';
+        const fullStars = Math.floor(score);
+        const hasHalfStar = score % 1 >= 0.5;
+
+        for (let i = 0; i < fullStars; i++) {
+          stars += fullStar;
+        }
+
+        if (hasHalfStar) {
+          stars += halfStar;
+        }
+
+        const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+        for (let i = 0; i < emptyStars; i++) {
+          stars += emptyStar;
+        }
+
+        return stars;
+      }
+
+      function addMysticStars() {
+        const container = document.querySelector('.container');
+        for (let i = 0; i < 15; i++) {
+          const star = document.createElement('div');
+          star.className = 'mystic-star';
+          star.style.left = `${Math.random() * 100}%`;
+          star.style.top = `${Math.random() * 100}%`;
+          container.appendChild(star);
+        }
+      }
+
+      function renderResult(data) {
+        try {
+          // JSONをパース（すでにJSONオブジェクトの場合はそのまま）
+          let resultData;
+          try {
+            resultData = typeof data === 'string' ? JSON.parse(data) : data;
+          } catch (e) {
+            console.error('JSONのパースに失敗しました:', e);
+            // 文字列として表示する代替手段
+            return `
+              <div class="section">
+                <h2 class="section-title"><i class="fas fa-file-alt"></i>診断結果</h2>
+                <div class="content-text">
+                  ${data}
+                </div>
+              </div>
+            `;
+          }
+
+          let html = '';
+
+          // 総合的な人物像セクション
+          if (resultData.overview) {
+            html += `
+              <div class="section">
+                <h2 class="section-title"><i class="fas fa-user-circle"></i>総合的な人物像</h2>
+                <div class="content-text">${resultData.overview}</div>
+              </div>
+            `;
+          }
+
+          // 詳細分析セクション
+          html += `
+            <div class="section">
+              <h2 class="section-title"><i class="fas fa-search"></i>詳細分析</h2>
+            `;
+
+          if (resultData.analysis && Object.keys(resultData.analysis).length > 0) {
+            const analysisTypes = {
+              numerology: { icon: "fa-hashtag", name: "数秘術" },
+              astrology: { icon: "fa-star", name: "占星術" },
+              fourPillars: { icon: "fa-columns", name: "四柱推命" },
+              animalCharacter: { icon: "fa-paw", name: "動物占い" },
+              nameReading: { icon: "fa-signature", name: "姓名判断" },
+              soundDivination: { icon: "fa-music", name: "音霊占い" }
+            };
+
+            for (const [key, value] of Object.entries(resultData.analysis)) {
+              if (analysisTypes[key] && value) {
+                html += `
+                  <div class="sub-section">
+                    <h3 class="sub-section-title"><i class="fas ${analysisTypes[key].icon}"></i>${analysisTypes[key].name}</h3>
+                    <div class="content-text">${value}</div>
+                  </div>
+                `;
+              }
+            }
+          } else {
+            html += `<div class="content-text">詳細分析データはありません。</div>`;
+          }
+
+          html += `</div>`;
+
+          // 評価セクション
+          if (resultData.evaluation) {
+            html += `
+              <div class="section">
+                <h2 class="section-title"><i class="fas fa-chart-bar"></i>5段階評価</h2>
+                <div class="rating-card">
+            `;
+
+            const evaluationTypes = {
+              leadership: "リーダー適性",
+              cooperation: "協調性",
+              stressResistance: "ストレス耐性",
+              flexibility: "柔軟性",
+              independence: "主体性",
+              creativity: "創造性",
+              execution: "実行力",
+              analysis: "分析力",
+              communication: "コミュニケーション力",
+              problemSolving: "問題解決力"
+            };
+
+            for (const [key, value] of Object.entries(resultData.evaluation)) {
+              if (evaluationTypes[key] && value.score) {
+                html += `
+                  <div class="rating-item">
+                    <div class="rating-title">${evaluationTypes[key]}</div>
+                    <div class="rating-stars">${getStarRating(value.score)}</div>
+                    <div class="content-text">
+                      <p><strong>理由:</strong> ${value.reason}</p>
+                      <p><strong>発揮される場面:</strong> ${value.application}</p>
+                      <p><strong>アドバイス:</strong> ${value.advice}</p>
+                    </div>
+                  </div>
+                `;
+              }
+            }
+
+            html += `
+                </div>
+              </div>
+            `;
+          }
+
+          // 適性診断セクション
+          if (resultData.careerAssessment) {
+            html += `
+              <div class="section">
+                <h2 class="section-title"><i class="fas fa-briefcase"></i>適性診断</h2>
+            `;
+
+            // 最適な職種
+            if (resultData.careerAssessment.suitableOccupations) {
+              html += `<h3 class="sub-section-title"><i class="fas fa-building"></i>最適な職種</h3>`;
+
+              resultData.careerAssessment.suitableOccupations.forEach(occupation => {
+                html += `
+                  <div class="occupation-item">
+                    <div class="occupation-title">${occupation.title}</div>
+                    <p><strong>理由:</strong> ${occupation.reason}</p>
+                    <p><strong>必要なスキル:</strong> ${occupation.requiredSkills}</p>
+                  </div>
+                `;
+              });
+            }
+
+            // 働き方の提案
+            if (resultData.careerAssessment.workStyleSuggestion) {
+              const workStyle = resultData.careerAssessment.workStyleSuggestion;
+              html += `
+                <div class="sub-section">
+                  <h3 class="sub-section-title"><i class="fas fa-laptop-house"></i>働き方の提案</h3>
+                  <p><strong>最適な働き方:</strong> ${workStyle.optimalWorkStyle}</p>
+                  <p><strong>最適な環境:</strong> ${workStyle.optimalEnvironment}</p>
+                  <p><strong>避けるべき環境:</strong> ${workStyle.environmentsToAvoid}</p>
+                </div>
+              `;
+            }
+
+            // キャリアパス
+            if (resultData.careerAssessment.careerPath) {
+              const careerPath = resultData.careerAssessment.careerPath;
+              html += `
+                <div class="sub-section">
+                  <h3 class="sub-section-title"><i class="fas fa-road"></i>キャリアパス</h3>
+                  <p><strong>短期目標 (1-3年):</strong> ${careerPath.shortTermGoals}</p>
+                  <p><strong>中期展望 (3-5年):</strong> ${careerPath.midTermProspects}</p>
+                  <p><strong>長期ビジョン (5-10年):</strong> ${careerPath.longTermVision}</p>
+                </div>
+              `;
+            }
+
+            html += `</div>`;
+          }
+
+          // 成長戦略セクション
+          if (resultData.growthStrategy) {
+            html += `
+              <div class="section">
+                <h2 class="section-title"><i class="fas fa-seedling"></i>成長戦略</h2>
+            `;
+
+            // 強みの活用法
+            if (resultData.growthStrategy.strengthUtilization) {
+              const strengths = resultData.growthStrategy.strengthUtilization;
+              html += `
+                <div class="sub-section">
+                  <h3 class="sub-section-title"><i class="fas fa-award"></i>強みの活用法</h3>
+                  <p><strong>活かし方:</strong> ${strengths.application}</p>
+                  <p><strong>伸ばすためのアクション:</strong> ${strengths.developmentActions}</p>
+                  <p><strong>期待される効果:</strong> ${strengths.expectedEffects}</p>
+                </div>
+              `;
+            }
+
+            // 課題への対応
+            if (resultData.growthStrategy.challengeAddressing) {
+              const challenges = resultData.growthStrategy.challengeAddressing;
+              html += `
+                <div class="sub-section">
+                  <h3 class="sub-section-title"><i class="fas fa-exclamation-triangle"></i>課題への対応</h3>
+                  <p><strong>改善すべき点:</strong> ${challenges.improvementAreas}</p>
+                  <p><strong>具体的な対策:</strong> ${challenges.specificMeasures}</p>
+                  <p><strong>克服のためのステップ:</strong> ${challenges.overcomingSteps}</p>
+                </div>
+              `;
+            }
+
+            // 学習・開発計画
+            if (resultData.growthStrategy.learningPlan) {
+              const learning = resultData.growthStrategy.learningPlan;
+              html += `
+                <div class="sub-section">
+                  <h3 class="sub-section-title"><i class="fas fa-book"></i>学習・開発計画</h3>
+                  <p><strong>習得すべきスキル:</strong></p>
+                  <div>
+                    ${learning.skillsToAcquire && Array.isArray(learning.skillsToAcquire)
+                      ? learning.skillsToAcquire.map(skill => `<span class="skill-tag">${skill}</span>`).join('')
+                      : ''}
+                  </div>
+                  <p><strong>推奨される学習方法:</strong> ${learning.recommendedLearningMethods}</p>
+                  <p><strong>タイムライン:</strong> ${learning.timeline}</p>
+                </div>
+              `;
+            }
+
+            html += `</div>`;
+          }
+
+          return html;
+        } catch (error) {
+          console.error('Failed to render result:', error);
+          return `<p class="text-red-500">結果の表示中にエラーが発生しました: ${error.message}</p>`;
+        }
+      }
+
+      (async () => {
+        try {
+          const url = new URL(window.location.href);
+          const id = url.searchParams.get('id');
+
+          if (!id) {
+            document.getElementById('result').innerHTML = '<p class="text-red-500">診断IDが見つかりません。</p>';
+            return;
+          }
+
+          const result = await fetch(`/api/results/${id}`);
+
+          if (!result.ok) {
+            throw new Error('結果の取得に失敗しました');
+          }
+
+          const resultData = await result.json();
+
+          // マークダウンのrenderingをJSONの構造化レンダリングに置き換え
+          document.getElementById('result').innerHTML = renderResult(resultData.result);
+
+          // 神秘的な星を追加
+          addMysticStars();
+
+        } catch (error) {
+          document.getElementById('result').innerHTML =
+            `<div class="section">
+              <p class="text-red-500">エラーが発生しました: ${error.message}</p>
+            </div>`;
+        }
+      })();
+    </script>
+  </body>
+</html>

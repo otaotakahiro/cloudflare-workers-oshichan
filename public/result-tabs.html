@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HR プロファイリング</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link href="/styles/main.css" rel="stylesheet" />
+    <link href="/styles/tabs-style.css" rel="stylesheet" />
+  </head>
+
+  <body>
+    <div class="container mx-auto px-4 py-5 max-w-7xl">
+      <!-- ヘッダー部分 -->
+      <div class="header-section mb-0 text-center sticky top-0 z-50 bg-white shadow-md w-full py-3 flex flex-col items-center">
+        <h1 class="text-lg sm:text-xl font-bold mb-1" id="person-name">総合プロファイリング</h1>
+        <div class="profile-info grid grid-cols-2 gap-x-2 gap-y-0 text-xs sm:text-sm leading-tight mb-2">
+          <div class="info-item text-center">氏名: <span id="full-name">-</span></div>
+          <div class="info-item text-center">性別: <span id="gender">-</span></div>
+          <div class="info-item text-center">生年月日: <span id="birth-date">-</span></div>
+          <div class="info-item text-center">分析日: <span id="analysis-date">-</span></div>
+        </div>
+        <div class="inline-flex flex-col sm:flex-row w-full justify-center border-t">
+          <!-- タブボタン (adjusted borders for header context) -->
+          <button id="overview-tab" class="tab-button active py-1.5 px-4 text-center font-medium text-sm border-b-2 border-blue-500 mb-px sm:mb-0 sm:py-2">
+            <i class="fas fa-user mr-1"></i>人物概要
+          </button>
+          <button id="skills-tab" class="tab-button py-1.5 px-4 text-center font-medium text-sm text-gray-500 hover:text-gray-700 border-b-2 border-transparent hover:border-gray-300 mb-px sm:mb-0 sm:py-2">
+            <i class="fas fa-chart-bar mr-1"></i>能力評価
+          </button>
+          <button id="career-tab" class="tab-button py-1.5 px-4 text-center font-medium text-sm text-gray-500 hover:text-gray-700 border-b-2 border-transparent hover:border-gray-300 mb-px sm:mb-0 sm:py-2">
+            <i class="fas fa-briefcase mr-1"></i>キャリア適性
+          </button>
+          <button id="future-tab" class="tab-button py-1.5 px-4 text-center font-medium text-sm text-gray-500 hover:text-gray-700 border-b-2 border-transparent hover:border-gray-300 mb-px sm:mb-0 sm:py-2">
+            <i class="fas fa-road mr-1"></i>未来予測
+          </button>
+          <button id="plus-tab" class="tab-button py-1.5 px-4 text-center font-medium text-sm text-gray-500 hover:text-gray-700 border-b-2 border-transparent hover:border-gray-300 mb-px sm:mb-0 sm:py-2">
+            <i class="fas fa-plus-circle mr-1"></i>プラスオン
+          </button>
+        </div>
+      </div>
+
+      <!-- ローディングインジケーター -->
+      <div id="loading-indicator" class="text-center py-10 mt-4">
+        <div class="spinner-border inline-block w-12 h-12 border-4 rounded-full border-blue-500 border-t-transparent animate-spin mb-4"></div>
+        <p class="mt-4 text-gray-600">データを読み込んでいます...</p>
+      </div>
+
+      <!-- エラーメッセージ -->
+      <div id="error-message" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 hidden">
+        <p id="error-text">データの読み込みに失敗しました。</p>
+      </div>
+
+      <!-- タブコンテンツ -->
+      <div class="tab-content-container" style="padding: 0;">
+        <!-- 人物概要タブの内容 -->
+        <div class="tab-content active" id="overview-content">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- 強みセクション -->
+            <div class="card bg-white rounded-lg p-5 shadow-sm">
+              <h2 class="text-xl font-bold mb-3 flex items-center text-blue-700 bg-blue-50 p-2 rounded-md">
+                <i class="fas fa-star text-yellow-500 mr-2"></i>強み
+              </h2>
+              <ul id="strengths-list" class="list-disc pl-5 space-y-2">
+                <!-- JavaScriptで挿入 -->
+              </ul>
+            </div>
+
+            <!-- 短所セクション -->
+            <div class="card bg-white rounded-lg p-5 shadow-sm">
+              <h2 class="text-xl font-bold mb-3 flex items-center text-red-700 bg-red-50 p-2 rounded-md">
+                <i class="fas fa-exclamation-circle text-red-500 mr-2"></i>短所
+              </h2>
+              <ul id="weaknesses-list" class="list-disc pl-5 space-y-2">
+                <!-- JavaScriptで挿入 -->
+              </ul>
+            </div>
+          </div>
+
+          <!-- 相性タイプと人物像を横並びに -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+            <!-- 相性の良い人物像 -->
+            <div id="compatibility-container">
+              <h2 class="text-xl font-bold mb-4 bg-purple-50 p-2 rounded-md inline-block">相性の良い人物像</h2>
+              <!-- JavaScriptで挿入 -->
+            </div>
+
+            <!-- 人物像総括 -->
+            <div id="personality-container">
+              <h2 class="text-xl font-bold mb-4 bg-green-50 p-2 rounded-md inline-block">人物像総括</h2>
+              <!-- JavaScriptで挿入 -->
+            </div>
+          </div>
+
+          <!-- 総合評価 -->
+          <div class="mt-8" id="evaluation-container">
+            <h2 class="text-xl font-bold mb-4 bg-blue-50 p-2 rounded-md inline-block">総合評価</h2>
+            <!-- JavaScriptで挿入 -->
+          </div>
+        </div>
+
+        <!-- 能力評価タブの内容 -->
+        <div class="tab-content" id="skills-content">
+          <h2 class="text-2xl font-bold mb-6 bg-blue-50 p-2 rounded-md inline-block">能力評価</h2>
+
+          <!-- スキル評価 -->
+          <div class="mb-10">
+            <h3 class="text-xl font-bold mb-4 flex items-center">
+              <i class="fas fa-star text-yellow-500 mr-2"></i>スキル評価
+            </h3>
+            <div id="skills-evaluations-container">
+              <!-- JavaScriptで挿入 -->
+            </div>
+          </div>
+
+          <!-- 面接質問 -->
+          <div class="mb-10">
+            <h3 class="text-xl font-bold mb-4 flex items-center">
+              <i class="fas fa-question-circle text-blue-500 mr-2"></i>推奨面接質問
+            </h3>
+            <div id="interview-questions-container">
+              <!-- JavaScriptで挿入 -->
+            </div>
+          </div>
+
+          <!-- 注意サイン -->
+          <div class="mb-10">
+            <h3 class="text-xl font-bold mb-4 flex items-center">
+              <i class="fas fa-exclamation-triangle text-yellow-500 mr-2"></i>注意サイン
+            </h3>
+            <div id="warning-signals-container">
+              <!-- JavaScriptで挿入 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- キャリア適性タブの内容 -->
+        <div class="tab-content" id="career-content">
+          <h2 class="text-2xl font-bold mb-6 bg-blue-50 p-2 rounded-md inline-block">キャリア適性</h2>
+
+          <!-- 適性スコア -->
+          <div class="mb-10">
+            <h3 class="text-xl font-bold mb-4 flex items-center">
+              <i class="fas fa-chart-line text-blue-500 mr-2"></i>適性スコア
+            </h3>
+            <div id="aptitude-scores-container">
+              <!-- JavaScriptで挿入 -->
+            </div>
+          </div>
+
+          <!-- 新規事業領域 -->
+          <div class="mb-10">
+            <h3 class="text-xl font-bold mb-4 flex items-center">
+              <i class="fas fa-lightbulb text-yellow-500 mr-2"></i>新規事業領域
+            </h3>
+            <div id="business-areas-container">
+              <!-- JavaScriptで挿入 -->
+            </div>
+          </div>
+
+          <!-- キャリア成功のキーワード -->
+          <div class="mb-10">
+            <h3 class="text-xl font-bold mb-4 flex items-center">
+              <i class="fas fa-key text-green-500 mr-2"></i>キャリア成功のキーワード
+            </h3>
+            <div id="success-keywords-container">
+              <!-- JavaScriptで挿入 -->
+            </div>
+          </div>
+
+          <!-- 適性分野 -->
+          <div class="mb-10">
+            <h3 class="text-xl font-bold mb-4 flex items-center">
+              <i class="fas fa-thumbs-up text-blue-500 mr-2"></i>適性分野
+            </h3>
+            <div id="suitable-fields-container">
+              <!-- JavaScriptで挿入 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 未来予測タブの内容 -->
+        <div class="tab-content" id="future-content">
+          <h2 class="text-2xl font-bold mb-6 bg-blue-50 p-2 rounded-md inline-block">キャリア未来予測</h2>
+
+          <!-- 時間軸での予測 -->
+          <div class="mb-10">
+            <h3 class="text-xl font-bold mb-4 flex items-center">
+              <i class="fas fa-clock text-blue-500 mr-2"></i>時間軸での予測
+            </h3>
+            <div id="timeline-container">
+              <!-- JavaScriptで挿入 -->
+            </div>
+          </div>
+
+          <!-- キャリア提案 -->
+          <div class="mb-10">
+            <h3 class="text-xl font-bold mb-4 flex items-center">
+              <i class="fas fa-road text-green-500 mr-2"></i>キャリア提案
+            </h3>
+            <div id="career-proposals-container">
+              <!-- JavaScriptで挿入 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- プラスオンタブの内容 -->
+        <div class="tab-content" id="plus-content">
+          <h2 class="text-2xl font-bold mb-6 bg-blue-50 p-2 rounded-md inline-block">コミュニケーション特性</h2>
+
+          <!-- 上司としての接し方 -->
+          <div class="mb-10">
+            <h3 class="text-xl font-bold mb-4 bg-green-50 p-2 rounded-md">上司としての接し方</h3>
+            <div id="as-boss-container">
+              <!-- JavaScriptで挿入 -->
+            </div>
+          </div>
+
+          <!-- 部下としての接し方 -->
+          <div class="mb-10">
+            <h3 class="text-xl font-bold mb-4 bg-blue-50 p-2 rounded-md">部下としての接し方</h3>
+            <div id="as-subordinate-container">
+              <!-- JavaScriptで挿入 -->
+            </div>
+          </div>
+
+          <!-- リーダーとしてのアプローチ -->
+          <div class="mb-10">
+            <h3 class="text-xl font-bold mb-4 bg-purple-50 p-2 rounded-md">リーダーとしてのアプローチ</h3>
+            <div id="as-leader-container">
+              <!-- JavaScriptで挿入 -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- フッター -->
+    <div class="footer mt-8 px-4">
+      <div class="container mx-auto max-w-7xl">
+        <div class="flex flex-col mb-4 border-t pt-4">
+          <div class="flex justify-between w-full mb-6">
+            <a href="/index.html" class="text-sm text-blue-500 hover:text-blue-700 hover:underline transition-colors duration-200">
+              <!-- ＜＜フォームに戻る -->
+            </a>
+          </div>
+          <div class="text-center text-gray-500">
+            <p>© 2025 HR Profiling</p>
+            <p class="text-xs mt-1">このプロファイリングは行動特性分析と心理学的アプローチに基づく分析結果です</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 各タブのスクリプトを明示的に読み込み -->
+    <script type="module" src="/scripts/tabs-overview.js"></script>
+    <script type="module" src="/scripts/tabs-skills.js"></script>
+    <script type="module" src="/scripts/tabs-career.js"></script>
+    <script type="module" src="/scripts/tabs-future.js"></script>
+    <script type="module" src="/scripts/tabs-plus.js"></script>
+    <script type="module" src="/scripts/tabs-main.js"></script>
+
+    <script>
+      // エラーハンドリング
+      window.addEventListener('error', function(event) {
+        console.error('Script error:', event);
+      });
+    </script>
+
+    <!-- Back to Top Button -->
+    <button
+      id="back-to-top-btn"
+      class="hidden fixed bottom-6 right-6 bg-blue-600 hover:bg-blue-700 text-white rounded-full w-10 h-10 flex items-center justify-center shadow-lg transition-opacity duration-300 z-50"
+      title="トップに戻る"
+    >
+      <i class="fas fa-arrow-up"></i>
+    </button>
+
+  </body>
+</html>

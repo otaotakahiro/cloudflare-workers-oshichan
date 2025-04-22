@@ -1,0 +1,22 @@
+{
+  "name": "cloudflare-workers-boilerplate",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "dev:remote": "wrangler dev --remote",
+    "start": "wrangler dev",
+    "login": "wrangler login",
+    "deploy": "wrangler deploy"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.14.0",
+    "cheerio": "^1.0.0",
+    "hono": "^4.7.6"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.7.5",
+    "wrangler": "^4.9.1"
+  }
+}

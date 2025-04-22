@@ -1,0 +1,29 @@
+/**
+ * For more details on how to configure Wrangler, refer to:
+ * https://developers.cloudflare.com/workers/wrangler/configuration/
+ */
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "hr-profiling",
+  "account_id": "f936ae74ccb3e57720edbdd06d1f0f13",
+  "main": "./src/index.js",
+  "compatibility_date": "2025-04-04",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "binding": "ASSETS",
+    "directory": "./public"
+  },
+  "observability": {
+    "enabled": false
+  },
+  "vars": {
+    "OPENAI_MODEL": "gpt-4.1-mini"
+  },
+  "kv_namespaces": [
+    {
+      "binding": "KV",
+      "id": "203c2fef5679429096bb56346907a2df",
+      "preview_id": "203c2fef5679429096bb56346907a2df"
+    }
+  ]
+}

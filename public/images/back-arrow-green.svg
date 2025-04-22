@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <!-- 緑色の円形背景 -->
+  <circle cx="256" cy="256" r="256" fill="#a8e6c1" />
+
+  <!-- 白い左矢印 -->
+  <path d="M345 128L215 256l130 128" stroke="white" stroke-width="40" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+  <path d="M215 256H367" stroke="white" stroke-width="40" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+</svg>
