@@ -1,6 +1,6 @@
-# HR Profiling Form (いい感じワールド版)
+# 私の推しちゃん診断（仮）
 
-このリポジトリは、HR（人事）プロファイリングフォームのウェブアプリケーションです。Cloudflare Workersを使用して実装されています。
+このリポジトリは、「私の推しちゃん診断（仮）」のウェブアプリケーションです。Cloudflare Workersを使用して実装されています。
 
 ## 機能
 
@@ -18,8 +18,8 @@
 
 ```bash
 # リポジトリのクローン
-git clone https://github.com/otaotakahiro/cloudflare-workers-hr-profiling.git
-cd cloudflare-workers-hr-profiling
+git clone https://github.com/otaotakahiro/cloudflare-workers-oshichan.git
+cd cloudflare-workers-oshichan
 
 # 依存パッケージのインストール
 npm install

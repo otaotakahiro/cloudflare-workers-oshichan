@@ -3,8 +3,9 @@ import { AnimalEntity } from '../domains/animal.entity';
 import { AngrytellerService } from '../infrastructures/sites/angryteller.service';
 import { AstrolineService } from '../infrastructures/sites/astroline.service';
 import { AskOracleService } from '../infrastructures/sites/ask-oracle.service';
-import OpenaiService from '../infrastructures/ai/openai.service';
+// import OpenaiService from '../infrastructures/ai/openai.service'; // ← 不要になるのでコメントアウトまたは削除
 import { AoiService } from '../infrastructures/sites/aoi/aoi.service';
+import { generateDiagnosis } from '../services/diagnosis.service.js'; // ← 新しいサービス関数をインポート
 
 /**
  * @param {Hono} app
@@ -44,62 +45,27 @@ export default function (app) {
       ]);
       console.log('External content fetched');
 
-      // プロンプト: コンテンツ部分
-      const contentsPrompBuilder = [];
+      // TODO: 取得した占いコンテンツ (aoiContent など) を `generateDiagnosis` に渡す必要があるか検討
+      // (現状の `generateDiagnosis` は `formData` しか受け取っていない)
 
-      // if (maneqlContent) {
-      //   contentsPrompBuilder.push(`## 動物占いの結果\n\n${maneqlContent}`);
-      // }
+      // --- 新しい診断サービス呼び出し (ここから) ---
+      console.log('Starting diagnosis generation...');
+      // 新しいサービス関数を呼び出す (占いデータはまだ渡していない)
+      const diagnosisResult = await generateDiagnosis(requestBody, context.env);
+      console.log('Diagnosis generation completed');
+      // --- 新しい診断サービス呼び出し (ここまで) ---
 
-      if (aoiContent) {
-        contentsPrompBuilder.push(`## 動物占いの結果\n\n${aoiContent}`);
-      }
-
-      if (angrytellerContent) {
-        contentsPrompBuilder.push(`## 姓名診断の結果\n\n${angrytellerContent}`);
-      }
-
-      if (astrolineContent) {
-        contentsPrompBuilder.push(`## 占星術出生図の結果\n\n${astrolineContent}`);
-      }
-
-      if (askOracleContent) {
-        contentsPrompBuilder.push(`## 数秘術の結果\n\n${askOracleContent}`);
-      }
-
-      // プロンプト: コンテンツ部分
-      const contentsPrompt = contentsPrompBuilder.join('\n\n');
-      console.log('Content prompt prepared');
-
-      // ユーザーデータの準備
-      const fullName = `${requestBody.familyName} ${requestBody.firstName}`;
-      const birthDateFormatted = `${birthDate.getFullYear()}年${birthDate.getMonth() + 1}月${birthDate.getDate()}日`;
-      const genderFormatted = requestBody.gender === 'male' ? '男性' : '女性';
-      const analysisDate = new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: 'long' });
-
-      const userData = {
-        name: fullName,
-        familyName: requestBody.familyName,
-        firstName: requestBody.firstName,
-        birthDate: birthDateFormatted,
-        gender: genderFormatted,
-        analysisDate: analysisDate,
-        contentsPrompt: contentsPrompt,
-        animalCharacter: animalEntity.character
-      };
-
-      // AIによる分析
-      console.log('Starting OpenAI analysis...');
-      const openaiService = new OpenaiService(context.env.OPENAI_API_KEY, context.env.OPENAI_MODEL);
-      const result = await openaiService.analyzeAll(userData);
-      console.log('OpenAI analysis completed');
-
+      // --- KVへの保存とレスポンス (ここから) ---
       const id = crypto.randomUUID();
-      await context.env.KV.put(id, JSON.stringify(result));
+      // KVには新しい診断結果 (diagnosisResult) を保存
+      await context.env.KV.put(id, JSON.stringify(diagnosisResult));
+      console.log(`Diagnosis result saved to KV with key: ${id}`);
 
       return context.json({
-        id,
+        id, // 生成した ID を返す
       });
+      // --- KVへの保存とレスポンス (ここまで) ---
+
     } catch (error) {
       console.error('Error in results route:', error);
       console.error('Error stack:', error.stack);
@@ -107,7 +73,9 @@ export default function (app) {
         {
           error: '分析中にエラーが発生しました',
           details: error.message,
-          stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+          // process.env はブラウザではなく Worker 環境で参照するべきだが、wrangler dev では使えない場合があるため注意
+          // stack: context.env.ENVIRONMENT === 'development' ? error.stack : undefined, // 環境変数で制御する例
+          stack: error.stack, // 一旦スタックトレースを返す
         },
         500,
       );

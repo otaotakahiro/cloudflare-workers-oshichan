@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { serveStatic } from 'hono/cloudflare-workers';
-import resultsRoute from './routes/results.route';
+import diagnosisRoute from './routes/diagnosis.route';
 
 const app = new Hono();
 
@@ -11,7 +11,7 @@ const formHtml = `
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>HR プロファイリング</title>
+    <title>私の推しちゃん診断（仮）</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
     <link href="/styles/main.css" rel="stylesheet" />
   </head>
@@ -23,69 +23,69 @@ const formHtml = `
     </div>
 
     <div class="container">
-      <h1 class="main-title">HR プロファイリング</h1>
+      <h1 class="main-title">私の推しちゃん診断（仮）</h1>
       <form onsubmit="submitForm(event)" class="max-w-lg mx-auto">
         <div class="mb-4 flex gap-4">
           <div class="w-1/2">
-            <label class="block text-gray-700 text-sm font-bold mb-2" for="familyName"> 姓（漢字） </label>
+            <label class="block text-gray-700 text-sm font-bold mb-2" for="familyName"> 推しの名前（姓） </label>
             <input
               class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
               id="familyName"
               name="familyName"
               type="text"
               required
-              value="山田"
+              value=""
             />
           </div>
           <div class="w-1/2">
-            <label class="block text-gray-700 text-sm font-bold mb-2" for="firstName"> 名（漢字） </label>
+            <label class="block text-gray-700 text-sm font-bold mb-2" for="firstName"> 推しの名前（名） </label>
             <input
               class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
               id="firstName"
               name="firstName"
               type="text"
               required
-              value="太郎"
+              value=""
             />
           </div>
         </div>
         <div class="mb-4 flex gap-4">
           <div class="w-1/2">
-            <label class="block text-gray-700 text-sm font-bold mb-2" for="familyNameKana"> 姓（ふりがな） </label>
+            <label class="block text-gray-700 text-sm font-bold mb-2" for="familyNameKana"> 推しの名前（姓ふりがな） </label>
             <input
               class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
               id="familyNameKana"
               name="familyNameKana"
               type="text"
               required
-              value="やまだ"
+              value=""
             />
           </div>
           <div class="w-1/2">
-            <label class="block text-gray-700 text-sm font-bold mb-2" for="firstNameKana"> 名（ふりがな） </label>
+            <label class="block text-gray-700 text-sm font-bold mb-2" for="firstNameKana"> 推しの名前（名ふりがな） </label>
             <input
               class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
               id="firstNameKana"
               name="firstNameKana"
               type="text"
               required
-              value="たろう"
+              value=""
             />
           </div>
         </div>
         <div class="mb-4">
-          <label class="block text-gray-700 text-sm font-bold mb-2" for="birthdate"> 生年月日 </label>
+          <label class="block text-gray-700 text-sm font-bold mb-2" for="birthdate"> 推しの誕生日 </label>
           <input
             class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
             id="birthdate"
             name="birthdate"
             type="date"
             required
-            value="1992-02-14"
+            value=""
           />
         </div>
         <div class="mb-6">
-          <label class="block text-gray-700 text-sm font-bold mb-2"> 性別 </label>
+          <label class="block text-gray-700 text-sm font-bold mb-2"> 推しの性別 </label>
           <div class="radio-group">
             <label class="radio-option">
               <input type="radio" name="gender" value="male" required checked />
@@ -145,7 +145,7 @@ const formHtml = `
     </script>
 
     <footer>
-      <p>© 2025 HR Profiling</p>
+      <p>© 2025 私の推しちゃん診断（仮）</p>
     </footer>
   </body>
 </html>
@@ -162,8 +162,8 @@ app.get('/oatoorihakat', (c) => {
   return c.html(formHtml);
 });
 
-// 既存のAPIルート
-app.route('/api/results', resultsRoute(app));
+// APIルート
+app.route('/api/results', diagnosisRoute(app));
 
 // 静的ファイル配信 (public ディレクトリをルートとする)
 // 重要: APIルートなど、より具体的なルートの後に配置する

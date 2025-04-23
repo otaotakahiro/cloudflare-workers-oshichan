@@ -352,6 +352,92 @@ export class OpenaiService {
       throw error;
     }
   }
+
+  /**
+   * 指定されたシステムプロンプトとユーザープロンプトでOpenAI APIを呼び出す
+   * @param {string} systemPrompt - システムプロンプト
+   * @param {string} userPrompt - ユーザープロンプト
+   * @param {boolean} expectJson - JSONオブジェクト形式での応答を期待するかどうか
+   * @returns {Promise<object|string>} 解析されたJSONオブジェクトまたはテキスト応答
+   */
+  async callApiWithPrompts(systemPrompt, userPrompt, expectJson = true) {
+    const start = Date.now();
+    console.log(`[${this.sessionId}] Calling OpenAI API with custom prompts...`);
+
+    // Fetch API を使用して OpenAI API を呼び出す
+    const messages = [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt },
+    ];
+
+    const body = {
+      model: this.model,
+      messages: messages,
+      temperature: 0.7, // 必要に応じて調整
+      max_tokens: 3000, // 必要に応じて調整
+    };
+
+    // JSONモードを指定 (対応モデルの場合)
+    if (expectJson && (this.model.includes('gpt-4-turbo') || this.model.includes('gpt-3.5-turbo-0125'))) {
+      body.response_format = { type: 'json_object' };
+      console.log(`[${this.sessionId}] Requesting JSON object format.`);
+    }
+
+    const requestOptions = {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${this.apiKey}`,
+      },
+      body: JSON.stringify(body),
+    };
+
+    try {
+      // タイムアウト付きでAPIリクエストを実行 (例: 60秒)
+      const response = await this.withTimeout(
+        fetch('https://api.openai.com/v1/chat/completions', requestOptions),
+        60000, // 60秒タイムアウト
+        'OpenAI API request timed out after 60 seconds'
+      );
+
+      const end = Date.now();
+      console.log(`[${this.sessionId}] OpenAI API call finished in ${(end - start) / 1000} seconds.`);
+
+      if (!response.ok) {
+        const errorBody = await response.text();
+        console.error(`[${this.sessionId}] OpenAI API Error: ${response.status}`, errorBody);
+        throw new Error(`OpenAI API request failed with status ${response.status}: ${errorBody}`);
+      }
+
+      const apiResponse = await response.json();
+      const content = apiResponse.choices?.[0]?.message?.content;
+
+      if (!content) {
+        console.error(`[${this.sessionId}] No content received from OpenAI API. Response:`, apiResponse);
+        throw new Error('No content received from OpenAI API');
+      }
+
+      // レスポンスログを保存 (ユーザーデータは限定的に渡すか、渡さない)
+      // this.saveResponseLog({ name: 'CustomPromptUser' }, content, 'customPrompt', apiResponse, systemPrompt, userPrompt);
+
+      if (expectJson) {
+        console.log(`[${this.sessionId}] Parsing JSON response...`);
+        const parsedJson = this.safeJsonParse(content);
+        if (parsedJson.error) {
+          console.error(`[${this.sessionId}] Failed to parse JSON response. Error: ${parsedJson.error}. Preview: ${parsedJson.preview}`);
+          throw new Error(`Failed to parse JSON response from OpenAI: ${parsedJson.error}`);
+        }
+        console.log(`[${this.sessionId}] JSON parsed successfully.`);
+        return parsedJson;
+      } else {
+        return content; // JSONを期待しない場合はテキストをそのまま返す
+      }
+
+    } catch (error) {
+      console.error(`[${this.sessionId}] Error calling OpenAI API:`, error);
+      throw error; // エラーを再スローして呼び出し元で処理
+    }
+  }
 }
 
 export default OpenaiService;
