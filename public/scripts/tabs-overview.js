@@ -3,55 +3,62 @@
  */
 
 /**
- * 人物概要タブのデータを設定
- * @param {Object} overview - 人物概要データ
+ * 「基本データ」タブ (旧 人物概要タブ) に診断結果の基本情報を設定します。
+ * @param {object} baseDiagnosis - 診断結果のbaseオブジェクト
+ * (publicPersona, privatePersona, mentalAspects, socialStance, lyingHabits を含む)
  */
-export function populateOverviewTab(overview) {
-    console.log('人物概要タブのデータ:', overview);
+export function populateOverviewTab(baseDiagnosis) {
+    console.log('populateOverviewTab 実行。受け取ったデータ:', baseDiagnosis);
+    const overviewContent = document.getElementById('overview-content');
 
-    if (!overview) {
-        console.error('人物概要データが存在しません');
+    if (!overviewContent) {
+        console.error('ID「overview-content」の要素が見つかりません。');
         return;
     }
 
-    // 全体のコンテナを取得
-    const container = document.getElementById('overview-content');
-    if (!container) {
-        console.error('人物概要コンテナが見つかりません');
+    if (!baseDiagnosis) {
+        overviewContent.innerHTML = '<div class="p-4 text-gray-500">基本データがありません。</div>';
+        console.warn('基本データ(baseDiagnosis)が提供されませんでした。');
         return;
     }
 
-    // HTMLの既存の構造を保持するため、強みと短所のh2要素を維持
-    // タイトルを追加する代わりに既存のHTMLタイトルを活用
+    // 表示するデータのキーと日本語ラベルのマッピング
+    const displayItems = [
+        { key: 'publicPersona', label: '表の顔 (Public Persona)', icon: 'fa-theater-masks' },
+        { key: 'privatePersona', label: '裏の顔 (Private Persona)', icon: 'fa-user-secret' },
+        { key: 'mentalAspects', label: 'メンタル傾向 (Mental Aspects)', icon: 'fa-brain' },
+        { key: 'socialStance', label: '人付き合いのスタンス (Social Stance)', icon: 'fa-users' },
+        { key: 'lyingHabits', label: '嘘のつき方・癖 (Lying Habits)', icon: 'fa-comment-slash' }
+    ];
 
-    // 強み表示
-    populateStrengths(overview.strengths);
+    let htmlContent = '<div class="p-3 sm:p-4 space-y-4">'; // 全体に少しパディングを適用
 
-    // 短所表示
-    populateWeaknesses(overview.weaknesses);
+    displayItems.forEach(item => {
+        const value = baseDiagnosis[item.key];
+        if (value) {
+            htmlContent += `
+                <div class="bg-white shadow-md rounded-lg p-4 hover:shadow-lg transition-shadow duration-200">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-2">
+                        <i class="fas ${item.icon} mr-2 text-blue-500"></i>${item.label}
+                    </h3>
+                    <p class="text-gray-600 whitespace-pre-line">${value}</p>
+                </div>
+            `;
+        } else {
+            htmlContent += `
+                <div class="bg-white shadow-md rounded-lg p-4">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-2">
+                        <i class="fas ${item.icon} mr-2 text-gray-400"></i>${item.label}
+                    </h3>
+                    <p class="text-gray-400 italic">情報がありません</p>
+                </div>
+            `;
+        }
+    });
 
-    // 相性タイプと人物像を格納するフレックスコンテナを作成
-    const flexContainer = document.createElement('div');
-    flexContainer.className = 'grid grid-cols-1 md:grid-cols-2';
-    container.appendChild(flexContainer);
-
-    // 相性タイプと人物像のコンテナを作成
-    const compatibilityContainer = document.createElement('div');
-    compatibilityContainer.id = 'compatibility-container';
-    flexContainer.appendChild(compatibilityContainer);
-
-    const personalityContainer = document.createElement('div');
-    personalityContainer.id = 'personality-container';
-    flexContainer.appendChild(personalityContainer);
-
-    // 相性タイプ表示
-    populateCompatibility(overview.compatibility);
-
-    // 人物像表示
-    populatePersonality(overview.personality);
-
-    // 総合評価表示
-    populateEvaluation(overview.evaluation);
+    htmlContent += '</div>';
+    overviewContent.innerHTML = htmlContent;
+    console.log('基本データタブの内容が更新されました。');
 }
 
 /**

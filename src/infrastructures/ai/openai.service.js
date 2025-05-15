@@ -1,9 +1,3 @@
-import { OVERVIEW_PROMPT } from './prompts/overview-prompt.js';
-import { SKILLS_PROMPT } from './prompts/skills-prompt.js';
-import { CAREER_PROMPT } from './prompts/career-prompt.js';
-import { FUTURE_PROMPT } from './prompts/future-prompt.js';
-import { PLUS_PROMPT } from './prompts/plus-prompt.js';
-
 export class OpenaiService {
   constructor(apiKey, model = 'gpt-4.1-mini') {
     if (!apiKey) {
@@ -14,63 +8,6 @@ export class OpenaiService {
 
     this.sessionId = `${Date.now()}-${Math.random().toString(36).substring(2, 10)}`;
     console.log(`Session ID: ${this.sessionId}`);
-  }
-
-  /**
-   * @param {string} firstName
-   * @param {string} familyName
-   * @param {string} firstNameKana
-   * @param {string} familyNameKana
-   * @param {Date} birthDate
-   * @param {string} gender
-   * @param {string} animalCharacter
-   * @param {string} additionalPrompt
-   */
-  async analyzeAll(userData) {
-    const start = Date.now();
-    const results = await Promise.allSettled([
-      this.analyzeTab(userData, OVERVIEW_PROMPT, 'overview'),
-      this.analyzeTab(userData, SKILLS_PROMPT, 'skills'),
-      this.analyzeTab(userData, CAREER_PROMPT, 'career'),
-      this.analyzeTab(userData, FUTURE_PROMPT, 'future'),
-      this.analyzeTab(userData, PLUS_PROMPT, 'plus')
-    ]);
-
-    const allData = {};
-    const resultStatus = {};
-
-    results.forEach((result, index) => {
-      const types = ['overview', 'skills', 'career', 'future', 'plus'];
-      const type = types[index];
-
-      if (result.status === 'fulfilled') {
-        allData[type] = result.value;
-        resultStatus[type] = 'success';
-      } else {
-        console.error(`Error analyzing ${type}:`, result.reason);
-        allData[type] = null;
-        resultStatus[type] = 'error';
-      }
-    });
-
-    const end = Date.now();
-    console.log(`Analysis completed in ${(end - start) / 1000} seconds`);
-
-    // ユーザーの基本情報もレスポンスに含める
-    const userInfo = {
-      name: userData.name,
-      birthDate: userData.birthDate,
-      gender: userData.gender,
-      analysisDate: userData.analysisDate
-    };
-
-    return {
-      data: {
-        ...allData,
-        userInfo // ユーザー基本情報を追加
-      },
-      status: resultStatus
-    };
   }
 
   /**
@@ -230,129 +167,6 @@ export class OpenaiService {
     return (name || 'unknown').replace(/[^\w\s-]/g, '').trim();
   }
 
-  buildPrompt(userData, promptTemplate) {
-    return promptTemplate
-      .replace('{{name}}', userData.name || '')
-      .replace('{{gender}}', userData.gender || '')
-      .replace('{{birthDate}}', userData.birthDate || '');
-  }
-
-  /**
-   * 各タブのコンテンツをAPIリクエストで取得
-   * @param {Object} userData - ユーザー情報
-   * @param {string} userData.name - フルネーム（姓名）
-   * @param {string} userData.familyName - 姓
-   * @param {string} userData.firstName - 名
-   * @param {string} userData.birthDate - 生年月日
-   * @param {string} userData.gender - 性別
-   * @param {string} userData.analysisDate - 分析日
-   * @param {string} userData.contentsPrompt - 各種占い結果をまとめたテキスト
-   * @param {string} userData.animalCharacter - 動物キャラクター
-   * @param {string} type - プロンプトの種類（'overview', 'skills', 'career', 'future', 'plus'）
-   * @returns {Promise<Object>} - 全タブのコンテンツを含むオブジェクト
-   */
-  async analyzeTab(userData, promptTemplate, type) {
-    try {
-      // すべてのユーザー入力をサニタイズ
-      const name = this.sanitizeInput(userData.name);
-      const familyName = this.sanitizeInput(userData.familyName);
-      const firstName = this.sanitizeInput(userData.firstName);
-      const birthDate = this.sanitizeInput(userData.birthDate);
-      const gender = this.sanitizeInput(userData.gender);
-      const analysisDate = this.sanitizeInput(userData.analysisDate);
-      let contentsPrompt = userData.contentsPrompt ? this.sanitizeInput(userData.contentsPrompt) : '';
-
-      let userPromptContent = `
-対象者情報：
-・姓： ${familyName}
-・名： ${firstName}
-・フルネーム: ${name}
-・生年月日: ${birthDate}
-・性別: ${gender}
-・分析日: ${analysisDate}
-
-上記の情報に基づいて、人材プロファイリング分析を行ってください。
-`;
-
-      // 追加のコンテンツ情報があれば追加
-      if (contentsPrompt) {
-        userPromptContent += `\n\n${contentsPrompt}`;
-      }
-
-      // タイムアウト付きでAPIリクエストを実行
-      const response = await this.withTimeout(
-        fetch('https://api.openai.com/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${this.apiKey}`,
-          },
-          body: JSON.stringify({
-            model: this.model,
-            messages: [
-              { role: 'system', content: promptTemplate },
-              { role: 'user', content: userPromptContent }
-            ],
-            temperature: 0.7,
-            max_tokens: 2000,
-            top_p: 1,
-            frequency_penalty: 0,
-            presence_penalty: 0,
-          }),
-        }),
-        60000, // 60秒のタイムアウト
-        'OpenAI API request timed out after 60 seconds'
-      );
-
-      if (!response.ok) {
-        const error = await response.json();
-        console.error('OpenAI API Error:', error);
-        throw new Error(`OpenAI API error: ${error.error?.message || 'Unknown error'} (HTTP ${response.status})`);
-      }
-
-      const data = await response.json();
-
-      // JSONレスポンスの抽出と解析
-      const content = data.choices[0]?.message?.content;
-      if (!content) {
-        throw new Error('No content in response from OpenAI API');
-      }
-
-      // コンソールへのログ出力とファイル保存
-      try {
-        await this.saveResponseLog(userData, content, type, data, promptTemplate, userPromptContent);
-      } catch (logError) {
-        // ロギングに失敗しても処理は続行
-        console.warn(`Logging failed for ${type}, but continuing: ${logError.message}`);
-      }
-
-      // Markdownコードブロックからの抽出
-      const jsonMatch = content.match(/```json\n([\s\S]*?)\n```/) || content.match(/```\n([\s\S]*?)\n```/);
-      let jsonContent;
-
-      if (jsonMatch) {
-        jsonContent = jsonMatch[1];
-      } else if (content.trim().startsWith('{') && content.trim().endsWith('}')) {
-        // コードブロックがない場合は直接JSONとして解析
-        jsonContent = content;
-      } else {
-        console.warn(`No JSON format found in response. Using raw content. Response begins with: ${content.substring(0, 100)}...`);
-        jsonContent = content;
-      }
-
-      try {
-        return JSON.parse(jsonContent);
-      } catch (error) {
-        console.error('Error parsing JSON response:', error);
-        console.error('Raw content:', jsonContent.substring(0, 200));
-        throw new Error('JSONの解析に失敗しました。APIの応答形式が想定と異なります。');
-      }
-    } catch (error) {
-      console.error('Analysis Tab Error:', error);
-      throw error;
-    }
-  }
-
   /**
    * 指定されたシステムプロンプトとユーザープロンプトでOpenAI APIを呼び出す
    * @param {string} systemPrompt - システムプロンプト
@@ -378,7 +192,8 @@ export class OpenaiService {
     };
 
     // JSONモードを指定 (対応モデルの場合)
-    if (expectJson && (this.model.includes('gpt-4-turbo') || this.model.includes('gpt-3.5-turbo-0125'))) {
+    // gpt-4-turbo (gpt-4-turbo-2024-04-09など) や gpt-3.5-turbo-0125 以降で利用可能
+    if (expectJson && (this.model.includes('gpt-4-turbo') || this.model.includes('gpt-4o') || this.model.startsWith('gpt-3.5-turbo-0125') || this.model.startsWith('gpt-3.5-turbo-1106'))) {
       body.response_format = { type: 'json_object' };
       console.log(`[${this.sessionId}] Requesting JSON object format.`);
     }
@@ -417,8 +232,13 @@ export class OpenaiService {
         throw new Error('No content received from OpenAI API');
       }
 
-      // レスポンスログを保存 (ユーザーデータは限定的に渡すか、渡さない)
-      // this.saveResponseLog({ name: 'CustomPromptUser' }, content, 'customPrompt', apiResponse, systemPrompt, userPrompt);
+      // レスポンスログを保存 (ユーザーデータは限定的に渡すか、渡さない。必要に応じて調整)
+      // try {
+      //   await this.saveResponseLog({ name: 'CustomPromptUser' }, content, 'customPrompt', apiResponse, systemPrompt, userPrompt);
+      // } catch (logError) {
+      //   console.warn(`Logging failed for customPrompt, but continuing: ${logError.message}`);
+      // }
+
 
       if (expectJson) {
         console.log(`[${this.sessionId}] Parsing JSON response...`);

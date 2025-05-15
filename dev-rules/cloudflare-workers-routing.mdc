@@ -1,0 +1,70 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Cloudflare Workers API ルーティングルール (Hono)
+
+## 基本方針
+- APIエンドポイントの主たる実装は `src/routes/` ディレクトリ以下に配置する。
+- 各ルートファイルは Cloudflare Workers の環境で動作することを前提とする。
+- ルーティングには **Hono** フレームワークを使用する。
+
+## 環境変数とバインディング
+- OpenAI APIキーなどの秘匿情報は、Cloudflare Workers の Secrets として設定し、ルートハンドラー内で `c.env` (HonoのContextオブジェクト経由) でアクセスする。
+- KVストアなどのバインディングも同様に `c.env` オブジェクト経由で利用する。
+
+## Next.js API ルートの扱い
+- `src/app/api/` ディレクトリ以下に作成する Next.js App Router 形式の API ルートは、本プロジェクトでは原則として**使用しない**。
+- 静的サイト生成やフロントエンドのレンダリングに Next.js を利用する場合でも、バックエンド API は Cloudflare Workers (Hono) で実装する。
+
+## Hono の基本的な使い方 (例)
+\`\`\`typescript
+import { Hono } from 'hono';
+
+// 環境変数・バインディングの型定義 (推奨)
+// wrangler.toml やダッシュボードで設定されたものが c.env に入る
+type Bindings = {
+  OPENAI_API_KEY: string;
+  MY_KV_NAMESPACE: KVNamespace;
+  // その他必要なバインディングをここに追加
+}
+
+const app = new Hono<{ Bindings: Bindings }>();
+
+app.post('/api/diagnosis', async (c) => {
+  try {
+    const formData = await c.req.json();
+    const apiKey = c.env.OPENAI_API_KEY;
+
+    // (例) src/services/diagnosis.service.js の関数を呼び出す
+    // const diagnosisService = require('../services/diagnosis.service');
+    // const result = await diagnosisService.generateDiagnosis(formData, c.env); // c.envを渡す
+
+    // KVへの保存例
+    // await c.env.MY_KV_NAMESPACE.put('some-key', JSON.stringify(result));
+
+    // return c.json({ message: 'Success', data: result });
+    return c.json({ message: 'Endpoint reached. FormData:', data: formData }); // 仮のレスポンス
+  } catch (error) {
+    console.error('Error in /api/diagnosis:', error);
+    return c.json({ error: 'Failed to process diagnosis request' }, { status: 500 });
+  }
+});
+
+// 他のルートもここに追加可能
+// app.get('/api/users/:id', (c) => { ... })
+
+export default app; // ルートオブジェクトをエクスポート (wrangler.tomlのエントリポイントでこのappが使われる想定)
+\`\`\`
+
+## プロジェクト構造の推奨 (一部)
+\`\`\`
+src/
+├── routes/                  # Hono のルート定義 (例: diagnosis.route.js)
+│   └── index.js             # メインのHonoアプリケーションインスタンス (各ルートをインポートしてまとめる場合)
+├── services/                # ビジネスロジック (例: diagnosis.service.js)
+├── infrastructures/         # 外部サービス連携 (例: openai.service.js)
+├── prompts/                 # プロンプト定義
+└── worker.ts                # Cloudflare Workerのエントリーポイント (または wrangler.toml で指定されたファイル)
+\`\`\`

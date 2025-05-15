@@ -6,6 +6,15 @@ import { AskOracleService } from '../infrastructures/sites/ask-oracle.service';
 // import OpenaiService from '../infrastructures/ai/openai.service'; // ← 不要になるのでコメントアウトまたは削除
 import { AoiService } from '../infrastructures/sites/aoi/aoi.service';
 import { generateDiagnosis } from '../services/diagnosis.service.js'; // ← 新しいサービス関数をインポート
+import { Hono } from 'hono';
+import { streamSSE } from 'hono/streaming';
+// import { kv } from '@vercel/kv'; // Vercel KV ← 削除
+import { saveDiagnosisResult, getDiagnosisResult } from '../services/kv.service.js';
+import { BASE_DIAGNOSIS_SYSTEM_PROMPT, generateBaseDiagnosisUserPrompt } from '../prompts/base-diagnosis.prompt.js';
+// diagnósticoPromptSchema のインポートは一旦コメントアウト (後で解決策を探す)
+// import { diagnósticoPromptSchema } from '../prompts/diagnosis.prompt.schema.js';
+
+const diagnosisRouter = new Hono();
 
 /**
  * @param {Hono} app
@@ -14,78 +23,116 @@ import { generateDiagnosis } from '../services/diagnosis.service.js'; // ← 新
 export default function (app) {
   // 結果を作成
   app.post('/', async context => {
+    console.log('診断リクエストを受け付けました。');
     try {
-      console.log('Request received');
       const requestBody = await context.req.json();
-      console.log('Request body:', requestBody);
+      console.log('リクエストボディ:', JSON.stringify(requestBody, null, 2));
 
-      // 生年月日を取得
-      const birthDate = new Date(requestBody.birthdate);
-      console.log('Birth date:', birthDate);
+      const { birthdate, familyName, firstName, gender } = requestBody;
+      const birthDateObj = new Date(birthdate);
 
-      // 動物を取得
-      const animalEntity = new AnimalEntity(birthDate);
-      console.log('Animal entity:', animalEntity);
+      let animalData = null;
+      try {
+        const animalNumber = AnimalEntity.getAnimalNumber(birthDateObj);
+        animalData = AnimalEntity.getAnimal(animalNumber);
+        console.log('動物占い情報取得成功:', animalData);
+      } catch (e) {
+        console.error('動物占い情報の取得に失敗しました:', e);
+        animalData = { error: '動物占い情報の取得に失敗しました' };
+      }
 
-      // 各種占いサイトのサービスをインスタンス化
-      // const maneqlSite = new ManeqlService(animalEntity.animal);
-      const aoiService = new AoiService(animalEntity.character, requestBody.gender);
-      const angrytellerService = new AngrytellerService(requestBody.familyName, requestBody.firstName);
-      const astrolineService = new AstrolineService(birthDate);
-      const askOracleService = new AskOracleService(birthDate);
+      const externalSitePromises = [];
+      if (familyName && firstName) {
+        externalSitePromises.push(
+          new AngrytellerService(familyName, firstName).getContent().catch(e => {
+            console.error('AngrytellerServiceからの情報取得に失敗:', e);
+            return { error: 'AngrytellerServiceからの情報取得に失敗' };
+          })
+        );
+      }
+      externalSitePromises.push(
+        new AstrolineService(birthDateObj).getContent().catch(e => {
+          console.error('AstrolineServiceからの情報取得に失敗:', e);
+          return { error: 'AstrolineServiceからの情報取得に失敗' };
+        })
+      );
+      externalSitePromises.push(
+        new AskOracleService(birthDateObj).getContent().catch(e => {
+          console.error('AskOracleServiceからの情報取得に失敗:', e);
+          return { error: 'AskOracleServiceからの情報取得に失敗' };
+        })
+      );
 
-      console.log('Fetching content from external services...');
-      // xxxContentに各サイトの内容を格納
-      const [aoiContent, angrytellerContent, astrolineContent, askOracleContent] = await Promise.all([
-        // maneqlSite.getContent(),
-        aoiService.getContent(),
-        angrytellerService.getContent(),
-        astrolineService.getContent(),
-        askOracleService.getContent(),
-      ]);
-      console.log('External content fetched');
+      const resolvedSiteContents = await Promise.all(externalSitePromises);
 
-      // TODO: 取得した占いコンテンツ (aoiContent など) を `generateDiagnosis` に渡す必要があるか検討
-      // (現状の `generateDiagnosis` は `formData` しか受け取っていない)
+      const externalSiteContents = {
+        animalFortune: animalData,
+        angrytellerContent: resolvedSiteContents[0] || { error: 'データなし' },
+        astrolineContent: resolvedSiteContents[1] || { error: 'データなし' },
+        askOracleContent: resolvedSiteContents[2] || { error: 'データなし' },
+        aoiContent: { error: '未取得 (動物キャラクター依存)' } // 初期値
+      };
 
-      // --- 新しい診断サービス呼び出し (ここから) ---
-      console.log('Starting diagnosis generation...');
-      // 新しいサービス関数を呼び出す (占いデータはまだ渡していない)
-      const diagnosisResult = await generateDiagnosis(requestBody, context.env);
-      console.log('Diagnosis generation completed');
-      // --- 新しい診断サービス呼び出し (ここまで) ---
+      // AoiService の処理 (animalData と animalData.character が正常に取得できた場合)
+      if (animalData && animalData.character && gender) {
+          try {
+              const aoiService = new AoiService(animalData.character, gender);
+              externalSiteContents.aoiContent = await aoiService.getContent().catch(e => {
+                  console.error('AoiServiceからの情報取得に失敗:', e);
+                  return { error: `AoiServiceからの情報取得に失敗: ${e.message}` };
+              });
+              console.log('AoiService情報取得成功:', externalSiteContents.aoiContent);
+          } catch (e) {
+              console.error('AoiServiceの処理に失敗:', e);
+              externalSiteContents.aoiContent = { error: `AoiServiceの処理に失敗: ${e.message}` };
+          }
+      } else if (!animalData || !animalData.character) {
+        externalSiteContents.aoiContent = { error: 'AoiService: 動物キャラクター不明のためスキップ' };
+      } else if (!gender) {
+        externalSiteContents.aoiContent = { error: 'AoiService: 性別不明のためスキップ' };
+      }
 
-      // --- KVへの保存とレスポンス (ここから) ---
-      const id = crypto.randomUUID();
-      // KVには新しい診断結果 (diagnosisResult) を保存
-      await context.env.KV.put(id, JSON.stringify(diagnosisResult));
-      console.log(`Diagnosis result saved to KV with key: ${id}`);
+      console.log('外部サイトコンテンツ:', JSON.stringify(externalSiteContents, null, 2));
 
-      return context.json({
-        id, // 生成した ID を返す
-      });
-      // --- KVへの保存とレスポンス (ここまで) ---
+      const userPrompt = generateBaseDiagnosisUserPrompt(requestBody, externalSiteContents);
+
+      const diagnosisResult = await generateDiagnosis(
+        BASE_DIAGNOSIS_SYSTEM_PROMPT,
+        userPrompt,
+        requestBody,
+        null,
+        context.env
+      );
+      console.log('診断結果生成完了');
+
+      if (!diagnosisResult || !diagnosisResult.base || diagnosisResult.base.error) {
+        const errorMessage = diagnosisResult && diagnosisResult.base && diagnosisResult.base.error
+          ? diagnosisResult.base.error
+          : '診断結果の形式が無効か、ベース診断に失敗しました。';
+        console.error(errorMessage, diagnosisResult);
+        return context.json({ error: '診断結果の生成に失敗しました', details: errorMessage }, 500);
+      }
+
+      const dataToSave = {
+        formData: requestBody,
+        diagnosis: diagnosisResult
+      };
+
+      const resultId = await saveDiagnosisResult(context, dataToSave);
+      console.log('診断結果保存完了。Result ID:', resultId);
+
+      return context.json({ id: resultId, result: dataToSave });
 
     } catch (error) {
-      console.error('Error in results route:', error);
-      console.error('Error stack:', error.stack);
-      return context.json(
-        {
-          error: '分析中にエラーが発生しました',
-          details: error.message,
-          // process.env はブラウザではなく Worker 環境で参照するべきだが、wrangler dev では使えない場合があるため注意
-          // stack: context.env.ENVIRONMENT === 'development' ? error.stack : undefined, // 環境変数で制御する例
-          stack: error.stack, // 一旦スタックトレースを返す
-        },
-        500,
-      );
+      console.error('診断リクエスト処理中にエラーが発生しました:', error);
+      return context.json({ error: '診断リクエストの処理中に内部エラーが発生しました', details: error.message }, 500);
     }
   });
 
   // 結果を取得
   app.get('/:id', async context => {
     const id = context.req.param('id');
-    const result = await context.env.KV.get(id);
+    const result = await getDiagnosisResult(context, id);
 
     if (!result) {
       return context.json(
@@ -98,7 +145,7 @@ export default function (app) {
 
     return context.json({
       id,
-      result: JSON.parse(result),
+      result: result,
     });
   });
 

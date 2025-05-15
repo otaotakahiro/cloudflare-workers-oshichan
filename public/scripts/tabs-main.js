@@ -1,17 +1,19 @@
 // タブモジュールをインポート
 import { populateOverviewTab } from './tabs-overview.js';
-import { populateSkillsTab } from './tabs-skills.js';
-import { populateCareerTab } from './tabs-career.js';
-import { populateFutureTab } from './tabs-future.js';
-import { populatePlusTab } from './tabs-plus.js';
+// import { populateSkillsTab } from './tabs-skills.js'; // 削除
+// import { populateCareerTab } from './tabs-career.js'; // 削除
+// import { populateFutureTab } from './tabs-future.js'; // 削除
+// import { populatePlusTab } from './tabs-plus.js'; // 削除
+import { populateLivePerformanceTab } from './tabs-live-performance.js'; // 新規追加
 
 // インポートの確認用ログ
 console.log('タブモジュールのインポート状態:');
 console.log('- populateOverviewTab:', typeof populateOverviewTab === 'function' ? '読み込み成功' : '読み込み失敗');
-console.log('- populateSkillsTab:', typeof populateSkillsTab === 'function' ? '読み込み成功' : '読み込み失敗');
-console.log('- populateCareerTab:', typeof populateCareerTab === 'function' ? '読み込み成功' : '読み込み失敗');
-console.log('- populateFutureTab:', typeof populateFutureTab === 'function' ? '読み込み成功' : '読み込み失敗');
-console.log('- populatePlusTab:', typeof populatePlusTab === 'function' ? '読み込み成功' : '読み込み失敗');
+console.log('- populateLivePerformanceTab:', typeof populateLivePerformanceTab === 'function' ? '読み込み成功' : '読み込み失敗'); // 新規追加
+// console.log('- populateSkillsTab:', typeof populateSkillsTab === 'function' ? '読み込み成功' : '読み込み失敗'); // 削除
+// console.log('- populateCareerTab:', typeof populateCareerTab === 'function' ? '読み込み成功' : '読み込み失敗'); // 削除
+// console.log('- populateFutureTab:', typeof populateFutureTab === 'function' ? '読み込み成功' : '読み込み失敗'); // 削除
+// console.log('- populatePlusTab:', typeof populatePlusTab === 'function' ? '読み込み成功' : '読み込み失敗'); // 削除
 
 // グローバル変数としてデータを保持
 let profileData = null;
@@ -83,56 +85,34 @@ document.addEventListener('DOMContentLoaded', function() {
  * タブの初期化と切り替え処理
  */
 function initializeTabs() {
-    // 新しく追加されたid属性に基づいてタブボタンを選択
     const tabButtons = [
         document.getElementById('overview-tab'),
-        document.getElementById('skills-tab'),
-        document.getElementById('career-tab'),
-        document.getElementById('future-tab'),
-        document.getElementById('plus-tab')
-    ].filter(button => button !== null); // nullの要素を除外
+        document.getElementById('skills-tab') // 「ライブでの輝き」タブ
+        // 非表示にしたタブのボタンは含めない
+    ].filter(button => button !== null);
 
     console.log('タブボタン取得状態:', tabButtons.length, '個見つかりました');
 
-    // タブコンテンツ要素を取得
     const tabContents = [
         document.getElementById('overview-content'),
-        document.getElementById('skills-content'),
-        document.getElementById('career-content'),
-        document.getElementById('future-content'),
-        document.getElementById('plus-content')
+        document.getElementById('skills-content') // 「ライブでの輝き」タブのコンテンツエリア
+        // 非表示にしたタブのコンテンツは含めない
     ].filter(content => content !== null);
 
     console.log('タブコンテンツ取得状態:', tabContents.length, '個見つかりました');
 
-    // ボタンが見つからない場合は処理を終了
     if (tabButtons.length === 0) {
         console.error('タブボタンが見つかりませんでした。HTMLを確認してください。');
         return;
     }
 
-    // 各タブボタンにクリックイベントを設定
-    tabButtons.forEach((button, index) => {
-        // ID名からタブIDを抽出（例: overview-tab → overview-content）
+    tabButtons.forEach((button) => {
         const baseId = button.id.replace('-tab', '');
         const tabId = `${baseId}-content`;
 
-        console.log(`タブ設定: ${button.id} → ${tabId}`);
-
         button.addEventListener('click', function() {
-            console.log(`タブクリック: ${this.id} → ${tabId}`);
-
-            // すべてのタブからアクティブクラスを削除
-            tabButtons.forEach(btn => {
-                if (btn) btn.classList.remove('active');
-            });
-
-            // すべてのコンテンツからアクティブクラスを削除
-            tabContents.forEach(content => {
-                if (content) content.classList.remove('active');
-            });
-
-            // クリックされたタブとそれに対応するコンテンツをアクティブにする
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            tabContents.forEach(content => content.classList.remove('active'));
             this.classList.add('active');
             const contentElement = document.getElementById(tabId);
             if (contentElement) {
@@ -143,7 +123,6 @@ function initializeTabs() {
         });
     });
 
-    // 初期状態として最初のタブをアクティブに設定
     if (tabButtons.length > 0) {
         tabButtons[0].click();
     }
@@ -179,50 +158,52 @@ function showError(message) {
 async function loadResultData() {
     const urlParams = new URLSearchParams(window.location.search);
     const resultId = urlParams.get('id');
-    // const loadingIndicator = document.getElementById('loading-indicator'); // コメントアウト済み
     const errorMessageDiv = document.getElementById('error-message');
-    const errorText = document.getElementById('error-text');
-
-    // ローディング表示を開始
-    // if (loadingIndicator) loadingIndicator.style.display = 'block'; // コメントアウト済み
     errorMessageDiv.classList.add('hidden');
 
-    // デバッグログの追加
-    updateDebug(`loadResultData 開始: resultId=${resultId}`); // isTestMode を削除
-
     try {
-        // 通常モードの場合：APIからデータをフェッチ
-        updateDebug('APIからデータをフェッチします');
         const response = await fetch(`/api/results/${resultId}`);
-        updateDebug(`API レスポンスステータス: ${response.status}`);
-
         if (!response.ok) {
-            const errorBody = await response.text(); // エラー内容を取得
-            updateDebug(`API エラーレスポンス: ${errorBody}`);
+            const errorBody = await response.text();
             showError(`データの読み込みに失敗しました。ステータス: ${response.status}`);
-            throw new Error(`HTTP error! status: ${response.status}`);
+            throw new Error(`HTTP error! status: ${response.status}, body: ${errorBody}`);
         }
 
-        profileData = await response.json(); // グローバル変数にデータを格納
-        updateDebug('API データ取得成功');
+        const apiResponse = await response.json();
+        console.log('API Response received:', JSON.stringify(apiResponse, null, 2));
 
-        // 取得したデータ構造の検証（デバッグ用）
-        diagnoseApiStructure(profileData);
+        // apiResponse.result が profileData となる。期待する構造は { base: {...}, formData: (オプション) ... }
+        profileData = apiResponse.result;
+        console.log('Parsed profileData:', JSON.stringify(profileData, null, 2));
 
-        // ローディング非表示
-        // if (loadingIndicator) loadingIndicator.style.display = 'none'; // コメントアウト済み
+        // 修正: profileData.diagnosis.base の存在を確認
+        if (!profileData || !profileData.diagnosis || !profileData.diagnosis.base) {
+            console.error('Error details:', {
+                hasProfileData: !!profileData,
+                hasDiagnosis: !!(profileData && profileData.diagnosis),
+                hasBase: !!(profileData && profileData.diagnosis && profileData.diagnosis.base)
+            });
+            showError('診断データ(base)が見つかりませんでした。');
+            throw new Error('Invalid data structure: base not found in profileData.diagnosis.');
+        }
 
-        // プロファイル情報を更新
-        updateProfileInfo(profileData);
+        // formData はオプションとして扱う
+        if (!profileData.formData) {
+            console.warn('フォームデータ(formData)がprofileData内に見つかりませんでした。ヘッダー情報の一部が欠けるか、baseから推測されます。');
+        }
 
-        // すべてのタブの内容を描画
-        populateAllTabs();
+        // 修正: updateProfileInfo に渡す引数を調整
+        updateProfileInfo(profileData.formData, profileData.diagnosis.base);
+        // 修正: populateAllTabs は profileData.diagnosis を渡すか、内部で .diagnosis.base を見るようにする。
+        // populateAllTabs の実装を確認後、適切な方を渡す。
+        // 現時点では、populateAllTabs が profileData.base を直接参照している可能性があるため、
+        // populateAllTabs(profileData.diagnosis); のように変更するか、
+        // populateAllTabs() のままにして populateAllTabs 内部を修正するか検討。
+        // まずは呼び出し側で profileData.diagnosis を渡してみる。
+        populateAllTabs(profileData.diagnosis); // 渡すデータを変更
 
     } catch (error) {
         console.error('Error loading result data:', error);
-        updateDebug(`エラー発生: ${error.message}`);
-        // エラー時もローディングを非表示
-        // if (loadingIndicator) loadingIndicator.style.display = 'none'; // コメントアウト済み
         showError(`データの読み込み中にエラーが発生しました: ${error.message}`);
     }
 }
@@ -231,230 +212,102 @@ async function loadResultData() {
  * プロファイル情報（ヘッダー部分）を更新
  * @param {Object} userInfo - ユーザー情報オブジェクト
  */
-function updateProfileInfo(userInfo) {
-    if (!userInfo) {
-        console.error('updateProfileInfo: userInfoがnullまたはundefinedです');
-        return;
-    }
+function updateProfileInfo(formData, baseData) {
+    let oshiFullName = '推し';
+    let oshiGender = '-';
+    let oshiBirthDate = '-';
 
-    // 姓名を取得
-    const familyName = userInfo.familyName || '';
-    const firstName = userInfo.firstName || '';
-    // nameを優先的に使用し、ない場合は姓名から生成
-    const fullName = userInfo.name || `${familyName} ${firstName}`.trim();
-
-    console.log('プロファイル情報更新詳細:', {
-        familyName,
-        firstName,
-        fullName,
-        birthDate: userInfo.birthDate,
-        gender: userInfo.gender,
-        analysisDate: userInfo.analysisDate
-    });
-
-    // ヘッダー情報を更新
-    const nameElement = document.getElementById('person-name');
-    if (nameElement) {
-        // タイトルは「総合プロファイリング」のみを表示
-        nameElement.textContent = '総合プロファイリング';
-        console.log('タイトルを更新しました:', nameElement.textContent);
-    } else {
-        console.error('person-name要素が見つかりません');
-    }
-
-    // 氏名欄を更新
-    const fullNameElement = document.getElementById('full-name');
-    if (fullNameElement) {
-        fullNameElement.textContent = fullName || '';
-        console.log('氏名要素を更新しました:', fullNameElement.textContent);
-    } else {
-        console.error('full-name要素が見つかりません');
-    }
-
-    // 生年月日欄を更新
-    const birthElement = document.getElementById('birth-date');
-    if (birthElement) {
-        birthElement.textContent = userInfo.birthDate || '';
-        console.log('生年月日要素を更新しました:', birthElement.textContent);
-    } else {
-        console.error('birth-date要素が見つかりません');
-    }
-
-    // 性別欄を更新
-    const genderElement = document.getElementById('gender');
-    if (genderElement) {
-        // 性別の表示形式を調整
-        let displayGender = userInfo.gender || '';
-        if (displayGender === 'male') {
-            displayGender = '男性';
-        } else if (displayGender === 'female') {
-            displayGender = '女性';
+    // formData が存在する場合のみ、そこから情報を取得
+    if (formData) {
+        if (formData.familyName && formData.firstName) {
+            oshiFullName = `${formData.familyName} ${formData.firstName}`.trim();
+        } else if (formData.name) {
+            oshiFullName = formData.name.trim();
         }
-        genderElement.textContent = displayGender;
-        console.log('性別要素を更新しました:', genderElement.textContent);
-    } else {
-        console.error('gender要素が見つかりません');
-    }
+        // formData に名前情報がない場合でも、baseData からのフォールバックは後続で行う
 
-    // 分析日欄を更新
-    const analysisElement = document.getElementById('analysis-date');
-    if (analysisElement) {
-        // 常に年月日形式で表示
-        let analysisDate = userInfo.analysisDate || '';
-        if (!analysisDate) {
-            const now = new Date();
-            analysisDate = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日`;
-        } else if (!analysisDate.includes('日')) {
-            // 日付の部分がない場合、現在の日付を使用
-            const now = new Date();
-            if (analysisDate.match(/^\d{4}年\d{1,2}月$/)) {
-                analysisDate = `${analysisDate}${now.getDate()}日`;
+        if (formData.gender) {
+            const genderMap = {
+                male: '男性',
+                female: '女性',
+                other: 'その他',
+                prefer_not_to_say: '回答しない'
+            };
+            oshiGender = genderMap[formData.gender.toLowerCase()] || formData.gender;
+        }
+        if (formData.birthdate) {
+            try {
+                const date = new Date(formData.birthdate + 'T00:00:00');
+                if (!isNaN(date)) {
+                    oshiBirthDate = `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
+                }
+            } catch (e) {
+                console.warn('生年月日の日付形式が無効です:', formData.birthdate, e);
+                oshiBirthDate = formData.birthdate;
             }
         }
-        analysisElement.textContent = analysisDate;
-        console.log('分析日要素を更新しました:', analysisElement.textContent);
-    } else {
-        console.error('analysis-date要素が見つかりません');
-    }
-}
-
-/**
- * 基本情報を更新
- */
-function updateBasicInfo() {
-    if (!profileData) {
-        return;
     }
 
-    // 姓名を取得
-    const familyName = profileData.familyName || '';
-    const firstName = profileData.firstName || '';
-    const fullName = profileData.name || `${familyName} ${firstName}`;
-
-    // タイトルは「総合プロファイリング」のみを表示
-    const nameElement = document.getElementById('person-name');
-    if (nameElement) {
-        nameElement.textContent = '総合プロファイリング';
+    // formData に名前情報がなかった、または formData 自体がなかった場合、baseData.publicPersona からの抽出を試みる
+    if (oshiFullName === '推し' && baseData && baseData.publicPersona) {
+        const match = baseData.publicPersona.match(/^(.*?)(は|のステージ)/);
+        if (match && match[1]) {
+            oshiFullName = match[1].trim();
+        }
     }
 
-    // 氏名欄を更新
+    const oshiNamePlaceholder = document.getElementById('oshi-name-placeholder');
+    if (oshiNamePlaceholder) {
+        oshiNamePlaceholder.textContent = oshiFullName;
+    }
+
     const fullNameElement = document.getElementById('full-name');
     if (fullNameElement) {
-        fullNameElement.textContent = fullName || '';
-    }
-
-    const birthElement = document.getElementById('birth-date');
-    if (birthElement) {
-        birthElement.textContent = profileData.birthDate || '';
+        fullNameElement.textContent = oshiFullName;
     }
 
     const genderElement = document.getElementById('gender');
     if (genderElement) {
-        // 性別の表示形式を調整
-        let displayGender = profileData.gender || '';
-        if (displayGender === 'male') {
-            displayGender = '男性';
-        } else if (displayGender === 'female') {
-            displayGender = '女性';
-        }
-        genderElement.textContent = displayGender;
+        genderElement.textContent = oshiGender;
     }
 
-    const analysisElement = document.getElementById('analysis-date');
-    if (analysisElement) {
-        // 常に年月日形式で表示
-        let analysisDate = profileData.analysisDate || '';
+    const birthDateElement = document.getElementById('birth-date');
+    if (birthDateElement) {
+        birthDateElement.textContent = oshiBirthDate;
+    }
 
-        // 分析日がない場合は現在の日付を使用
-        if (!analysisDate) {
-            const now = new Date();
-            analysisDate = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日`;
-        } else if (!analysisDate.includes('日')) {
-            // 日付の部分がない場合、現在の日付を使用
-            const now = new Date();
-            if (analysisDate.match(/^\d{4}年\d{1,2}月$/)) {
-                analysisDate = `${analysisDate}${now.getDate()}日`;
-            }
-        }
-
-        analysisElement.textContent = analysisDate;
+    const analysisDateElement = document.getElementById('analysis-date');
+    if (analysisDateElement) {
+        const now = new Date();
+        analysisDateElement.textContent = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日`;
     }
 }
 
 /**
  * 全タブのデータを設定
  */
-function populateAllTabs() {
+function populateAllTabs(data) {
     console.log('全タブのデータを設定します');
-
-    if (!profileData) {
-        console.error('プロフィールデータがないため、タブデータを設定できません');
+    // profileData と profileData.base の存在をチェック
+    if (!data || !data.base) {
+        console.error('プロフィールデータまたはbaseデータがないため、タブデータを設定できません');
         return;
     }
 
     try {
-        console.log('人物概要タブを設定...');
-        if (profileData.overview) {
-            console.log('人物概要データの詳細:');
-            console.log('- strengths:', profileData.overview.strengths ? `${profileData.overview.strengths.length}件` : 'なし');
-            console.log('- weaknesses:', profileData.overview.weaknesses ? `${profileData.overview.weaknesses.length}件` : 'なし');
-            console.log('- compatibility:', profileData.overview.compatibility ? '存在します' : 'なし');
-            console.log('- personality:', profileData.overview.personality ? '存在します' : 'なし');
-            console.log('- evaluation:', profileData.overview.evaluation ? '存在します' : 'なし');
+        console.log('基本データタブを設定...');
+        populateOverviewTab(data.base); // profileData.base を直接渡す
 
-            populateOverviewTab(profileData.overview);
+        console.log('ライブでの輝きタブを設定...');
+        if (data.base.livePerformanceHints) {
+            populateLivePerformanceTab(data.base.livePerformanceHints);
         } else {
-            console.warn('人物概要データがありません');
+            console.warn('ライブでの輝きデータ(livePerformanceHints)がありません');
+            const skillsContent = document.getElementById('skills-content');
+            if (skillsContent) {
+                skillsContent.innerHTML = '<div class="p-4 text-gray-500">ライブパフォーマンスに関するヒントはありません。</div>';
+            }
         }
-
-        console.log('能力評価タブを設定...');
-        if (profileData.skills) {
-            console.log('能力評価データの詳細:');
-            console.log('- evaluations:', profileData.skills.evaluations ? `${profileData.skills.evaluations.length}件` : 'なし');
-            console.log('- interviewQuestions:', profileData.skills.interviewQuestions ? `${profileData.skills.interviewQuestions.length}件` : 'なし');
-            console.log('- warningSignals:', profileData.skills.warningSignals ? `${profileData.skills.warningSignals.length}件` : 'なし');
-
-            populateSkillsTab(profileData.skills);
-        } else {
-            console.warn('能力評価データがありません');
-        }
-
-        console.log('キャリア適性タブを設定...');
-        if (profileData.career) {
-            console.log('キャリア適性データの詳細:');
-            console.log('- aptitudeScores:', profileData.career.aptitudeScores ? `${profileData.career.aptitudeScores.length}件` : 'なし');
-            console.log('- businessAreas:', profileData.career.businessAreas ? `${profileData.career.businessAreas.length}件` : 'なし');
-            console.log('- successKeywords:', profileData.career.successKeywords ? `${profileData.career.successKeywords.length}件` : 'なし');
-            console.log('- suitableFields:', profileData.career.suitableFields ? `${profileData.career.suitableFields.length}件` : 'なし');
-
-            populateCareerTab(profileData.career);
-        } else {
-            console.warn('キャリア適性データがありません');
-        }
-
-        console.log('未来予測タブを設定...');
-        if (profileData.future) {
-            console.log('未来予測データの詳細:');
-            console.log('- timeline:', profileData.future.timeline ? `${profileData.future.timeline.length}件` : 'なし');
-            console.log('- careerProposals:', profileData.future.careerProposals ? `${profileData.future.careerProposals.length}件` : 'なし');
-
-            populateFutureTab(profileData.future);
-        } else {
-            console.warn('未来予測データがありません');
-        }
-
-        console.log('プラスオンタブを設定...');
-        if (profileData.plus) {
-            console.log('プラスオンデータの詳細:');
-            console.log('- asBoss:', profileData.plus.asBoss ? '存在します' : 'なし');
-            console.log('- asSubordinate:', profileData.plus.asSubordinate ? '存在します' : 'なし');
-            console.log('- asLeader:', profileData.plus.asLeader ? '存在します' : 'なし');
-
-            populatePlusTab(profileData.plus);
-        } else {
-            console.warn('プラスオンデータがありません');
-        }
-
         console.log('全タブのデータ設定が完了しました');
     } catch (error) {
         console.error('タブデータの設定中にエラーが発生しました:', error);
