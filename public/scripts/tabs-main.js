@@ -296,11 +296,11 @@ function populateAllTabs(data) {
 
     try {
         console.log('基本データタブを設定...');
-        populateOverviewTab(data.base); // profileData.base を直接渡す
+        populateOverviewTab(data.base); // data.base を渡すように変更
 
         console.log('ライブでの輝きタブを設定...');
         if (data.base.livePerformanceHints) {
-            populateLivePerformanceTab(data.base.livePerformanceHints);
+            populateLivePerformanceTab(data.base.livePerformanceHints); // data.base.livePerformanceHints を渡す
         } else {
             console.warn('ライブでの輝きデータ(livePerformanceHints)がありません');
             const skillsContent = document.getElementById('skills-content');

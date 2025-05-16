@@ -26,7 +26,7 @@ export function populateOverviewTab(baseDiagnosis) {
     const displayItems = [
         { key: 'publicPersona', label: '表の顔 (Public Persona)', icon: 'fa-theater-masks' },
         { key: 'privatePersona', label: '裏の顔 (Private Persona)', icon: 'fa-user-secret' },
-        { key: 'mentalAspects', label: 'メンタル傾向 (Mental Aspects)', icon: 'fa-brain' },
+        { key: 'mentalAspects', label: 'メンタル傾向 (Mental Aspects)', icon: 'fa-brain', isObject: true, subKeys: [{key: 'strength', label: '強み'}, {key: 'weakness', label: '弱み'}] },
         { key: 'socialStance', label: '人付き合いのスタンス (Social Stance)', icon: 'fa-users' },
         { key: 'lyingHabits', label: '嘘のつき方・癖 (Lying Habits)', icon: 'fa-comment-slash' }
     ];
@@ -35,25 +35,34 @@ export function populateOverviewTab(baseDiagnosis) {
 
     displayItems.forEach(item => {
         const value = baseDiagnosis[item.key];
-        if (value) {
-            htmlContent += `
-                <div class="bg-white shadow-md rounded-lg p-4 hover:shadow-lg transition-shadow duration-200">
-                    <h3 class="text-lg font-semibold text-gray-700 mb-2">
-                        <i class="fas ${item.icon} mr-2 text-blue-500"></i>${item.label}
-                    </h3>
-                    <p class="text-gray-600 whitespace-pre-line">${value}</p>
-                </div>
-            `;
+        htmlContent += `
+            <div class="bg-white shadow-md rounded-lg p-4 hover:shadow-lg transition-shadow duration-200">
+                <h3 class="text-lg font-semibold text-gray-700 mb-2">
+                    <i class="fas ${item.icon} mr-2 text-blue-500"></i>${item.label}
+                </h3>`;
+        if (item.isObject && typeof value === 'object' && value !== null) {
+            item.subKeys.forEach(subItem => {
+                const subValue = value[subItem.key];
+                if (subValue) {
+                    htmlContent += `
+                        <div class="mt-2">
+                            <h4 class="text-md font-semibold text-gray-600 mb-1">${subItem.label}</h4>
+                            <p class="text-gray-600 whitespace-pre-line">${subValue}</p>
+                        </div>`;
+                } else {
+                    htmlContent += `
+                        <div class="mt-2">
+                            <h4 class="text-md font-semibold text-gray-500 mb-1">${subItem.label}</h4>
+                            <p class="text-gray-400 italic">情報がありません</p>
+                        </div>`;
+                }
+            });
+        } else if (value) {
+            htmlContent += `<p class="text-gray-600 whitespace-pre-line">${value}</p>`;
         } else {
-            htmlContent += `
-                <div class="bg-white shadow-md rounded-lg p-4">
-                    <h3 class="text-lg font-semibold text-gray-700 mb-2">
-                        <i class="fas ${item.icon} mr-2 text-gray-400"></i>${item.label}
-                    </h3>
-                    <p class="text-gray-400 italic">情報がありません</p>
-                </div>
-            `;
+            htmlContent += `<p class="text-gray-400 italic">情報がありません</p>`;
         }
+        htmlContent += `</div>`;
     });
 
     htmlContent += '</div>';
