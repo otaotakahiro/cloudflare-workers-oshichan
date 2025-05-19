@@ -170,12 +170,16 @@ app.get('/', (c) => {
 // basePath があるので、assessmentRoute は /api/results で定義されていればOK
 app.route('/api/results', assessmentRoute(app));
 
-// 静的ファイル配信 (public ディレクトリをルートとする)
-// 重要: APIルートなど、より具体的なルートの後に配置する
-// basePath('/assessment') があるので、ここに来るリクエストパスは既に /assessment が取り除かれている。
-// 例: /assessment/styles/main.css へのリクエストは、/styles/main.css として扱われる。
-// なので、./public/styles/main.css が配信される。
-app.use('/*', serveStatic({ root: './public' }));
+// 静的ファイルの個別配信設定 (root を指定)
+app.get('/styles/main.css', serveStatic({ root: './', path: 'public/styles/main.css' }));
+app.get('/styles/tabs-style.css', serveStatic({ root: './', path: 'public/styles/tabs-style.css' }));
+app.get('/result-tabs.html', serveStatic({ root: './', path: 'public/result-tabs.html' }));
+app.get('/scripts/tabs-overview.js', serveStatic({ root: './', path: 'public/scripts/tabs-overview.js' }));
+app.get('/scripts/tabs-main.js', serveStatic({ root: './', path: 'public/scripts/tabs-main.js' }));
+// 他に配信が必要な public 内のファイルを必要に応じて追加
+// app.get('/form.html', serveStatic({ root: './', path: 'public/form.html' }));
+// app.get('/result.html', serveStatic({ root: './', path: 'public/result.html' }));
+// app.get('/styles.css', serveStatic({ root: './', path: 'public/styles.css' }));
 
 // --- Worker エントリーポイント ---
 export default {
