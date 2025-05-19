@@ -13,7 +13,7 @@ const formHtml = `
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>私の推しちゃん診断（仮）new</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
-    <link href="/assessment/styles/main.css" rel="stylesheet" />
+    <link href="/styles/main.css" rel="stylesheet" />
   </head>
   <body>
     <!-- Loading Overlay -->
