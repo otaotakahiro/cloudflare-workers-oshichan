@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { serveStatic } from 'hono/cloudflare-workers';
+import { serveStatic } from 'hono/cloudflare-workers'; // serveStatic を再度有効化
 import assessmentRoute from './routes/assessment.route';
 
 const app = new Hono().basePath('/assessment');
@@ -13,7 +13,7 @@ const formHtml = `
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>私の推しちゃん診断（仮）</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
-    <link href="./styles/main.css" rel="stylesheet" />
+    <link href="/assessment/styles/main.css" rel="stylesheet" />
   </head>
   <body>
     <!-- Loading Overlay -->
@@ -117,7 +117,7 @@ const formHtml = `
 
         try {
           const formData = new FormData(event.target);
-          const response = await fetch('./api/results', {
+          const response = await fetch('/assessment/api/results', {
             method: 'POST',
             body: JSON.stringify(Object.fromEntries(formData)),
             headers: {
@@ -127,10 +127,20 @@ const formHtml = `
 
           if (response.ok) {
             const result = await response.json();
-            window.location.href = './result-tabs.html?id=' + result.id;
+            window.location.href = '/assessment/result-tabs.html?id=' + result.id;
           } else {
-            const errorData = await response.json();
-            throw new Error(errorData.error || '分析に失敗しました');
+            // 500エラー時などにレスポンスがJSONでない場合を考慮
+            let errorText = '分析に失敗しました';
+            try {
+              const errorData = await response.json();
+              errorText = errorData.error || errorText;
+            } catch (e) {
+              // response.json() でパースエラーが起きた場合は、元のテキストを取得しようと試みる
+              // ただし、response.text() も一度しか読めないので注意。ここでは単純化のため省略。
+              console.error('Failed to parse error response as JSON:', e);
+              // errorText はデフォルトのまま
+            }
+            throw new Error(errorText);
           }
         } catch (error) {
           alert(error.message);
@@ -170,16 +180,18 @@ app.get('/', (c) => {
 // basePath があるので、assessmentRoute は /api/results で定義されていればOK
 app.route('/api/results', assessmentRoute(app));
 
-// 静的ファイルの個別配信設定 (root を指定)
+// 静的ファイル配信設定を再度有効化し、調整
 app.get('/styles/main.css', serveStatic({ root: './', path: 'public/styles/main.css' }));
 app.get('/styles/tabs-style.css', serveStatic({ root: './', path: 'public/styles/tabs-style.css' }));
 app.get('/result-tabs.html', serveStatic({ root: './', path: 'public/result-tabs.html' }));
 app.get('/scripts/tabs-overview.js', serveStatic({ root: './', path: 'public/scripts/tabs-overview.js' }));
 app.get('/scripts/tabs-main.js', serveStatic({ root: './', path: 'public/scripts/tabs-main.js' }));
-// 他に配信が必要な public 内のファイルを必要に応じて追加
-// app.get('/form.html', serveStatic({ root: './', path: 'public/form.html' }));
-// app.get('/result.html', serveStatic({ root: './', path: 'public/result.html' }));
-// app.get('/styles.css', serveStatic({ root: './', path: 'public/styles.css' }));
+// 他に public 内で必要なファイルがあればここに追加
+
+// Honoが処理しなかったパスは明確に404を返す
+app.notFound((c) => {
+  return c.text('Content Not Found via Hono', 404);
+});
 
 // --- Worker エントリーポイント ---
 export default {
