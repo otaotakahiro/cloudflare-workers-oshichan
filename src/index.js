@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { serveStatic } from 'hono/cloudflare-workers';
 import assessmentRoute from './routes/assessment.route';
 
-const app = new Hono();
+const app = new Hono().basePath('/assessment');
 
 // HTML content with loading overlay
 const formHtml = `
@@ -13,7 +13,7 @@ const formHtml = `
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>私の推しちゃん診断（仮）</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
-    <link href="/styles/main.css" rel="stylesheet" />
+    <link href="./styles/main.css" rel="stylesheet" />
   </head>
   <body>
     <!-- Loading Overlay -->
@@ -117,7 +117,7 @@ const formHtml = `
 
         try {
           const formData = new FormData(event.target);
-          const response = await fetch('/api/results', {
+          const response = await fetch('./api/results', {
             method: 'POST',
             body: JSON.stringify(Object.fromEntries(formData)),
             headers: {
@@ -127,8 +127,7 @@ const formHtml = `
 
           if (response.ok) {
             const result = await response.json();
-            // Redirect to results page - loading overlay will disappear on navigation
-            window.location.href = '/result-tabs.html?id=' + result.id;
+            window.location.href = './result-tabs.html?id=' + result.id;
           } else {
             const errorData = await response.json();
             throw new Error(errorData.error || '分析に失敗しました');
@@ -157,16 +156,25 @@ const formHtml = `
 //   return c.notFound();
 // }); // このルートを削除
 
-// フォーム表示 (GET /oatoorihakat)
+// フォーム表示 (GET /assessment/oatoorihakat)
 app.get('/oatoorihakat', (c) => {
   return c.html(formHtml);
 });
 
-// APIルート
+// ★ /assessment/ でフォームを表示するためのルートを追加
+app.get('/', (c) => {
+  return c.html(formHtml);
+});
+
+// APIルート (POST /assessment/api/results)
+// basePath があるので、assessmentRoute は /api/results で定義されていればOK
 app.route('/api/results', assessmentRoute(app));
 
 // 静的ファイル配信 (public ディレクトリをルートとする)
 // 重要: APIルートなど、より具体的なルートの後に配置する
+// basePath('/assessment') があるので、ここに来るリクエストパスは既に /assessment が取り除かれている。
+// 例: /assessment/styles/main.css へのリクエストは、/styles/main.css として扱われる。
+// なので、./public/styles/main.css が配信される。
 app.use('/*', serveStatic({ root: './public' }));
 
 // --- Worker エントリーポイント ---
