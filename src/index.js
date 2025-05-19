@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { serveStatic } from 'hono/cloudflare-workers';
-import diagnosisRoute from './routes/diagnosis.route';
+import assessmentRoute from './routes/assessment.route';
 
 const app = new Hono();
 
@@ -163,7 +163,7 @@ app.get('/oatoorihakat', (c) => {
 });
 
 // APIルート
-app.route('/api/results', diagnosisRoute(app));
+app.route('/api/results', assessmentRoute(app));
 
 // 静的ファイル配信 (public ディレクトリをルートとする)
 // 重要: APIルートなど、より具体的なルートの後に配置する
