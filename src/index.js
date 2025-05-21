@@ -11,7 +11,7 @@ const formHtml = `
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>私の推しちゃん診断（仮）正しい動作ver#03</title>
+    <title>私の推しちゃん診断（仮）ver#05</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
     <link href="/styles/main.css" rel="stylesheet" />
   </head>
@@ -23,7 +23,7 @@ const formHtml = `
     </div>
 
     <div class="container">
-      <h1 class="main-title">私の推しちゃん診断（仮）</h1>
+      <h1 class="main-title">私の推しちゃん診断（仮）ver#05</h1>
       <form onsubmit="submitForm(event)" class="max-w-lg mx-auto">
         <div class="mb-4 flex gap-4">
           <div class="w-1/2">
