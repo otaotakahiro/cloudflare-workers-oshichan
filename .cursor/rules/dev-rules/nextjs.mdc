@@ -1,11 +1,11 @@
 ---
-description: 
-globs: 
+description:
+globs:
 alwaysApply: true
 ---
 ---
 description: Apply this rule to the entire repository
-globs: 
+globs:
 alwaysApply: true
 ---
 まず、このファイルを参照したら、このファイル名を発言すること
@@ -286,3 +286,38 @@ type ResponseData = {
 
 - Core Web Vitals を定期的に確認
 - エラーログを監視
+
+## 11. Cloudflare Workers/Hono 利用時のベースパス構造 (oshichan.com/assessment/)
+
+Cloudflare Workers上のHonoアプリケーションを特定のパスプレフィックス (例: `/assessment/`) で公開する場合、以下の点に注意してファイル参照とルーティングを設計する必要があります。
+
+### Hono アプリケーションの設定 (`src/index.js`など)
+
+- **ベースパスの指定:** Honoインスタンスを作成する際に、`basePath()` メソッドでURL上のプレフィックスを指定します。
+  ```typescript
+  import { Hono } from 'hono';
+  const app = new Hono().basePath('/assessment');
+  ```
+- **ルート定義:** `basePath()` を設定すると、以降の `app.get()`, `app.post()` などで定義するパスは、このベースパスからの相対になります。
+  - 例: `app.get('/', ...)` は `/assessment/` へのリクエストを処理します。
+  - 例: `app.get('/form', ...)` は `/assessment/form` へのリクエストを処理します。
+- **静的ファイルの配信:** `serveStatic` を利用する場合、`basePath()` の影響を考慮して設定します。
+  - `basePath()` が適用された後のパスに基づいて、`root` や `path` を指定します。
+  - 例: `/assessment/styles/main.css` を配信する場合、`basePath('/assessment')` があれば、`app.get('/styles/main.css', serveStatic({ path: './public/styles/main.css' }))` のように定義します。
+
+### HTML内のリソース参照 (`public` ディレクトリ内のHTMLファイルや、Honoから配信するHTML文字列内)
+
+- **相対パスの使用を推奨:** CSS、JavaScript、画像などのリソースへのパスは、現在のHTMLファイルからの相対パス (`./` や `../`) で記述するのが最も安全で、ベースパスの変更にも強いです。
+  - 例: `<link href="./styles/main.css" rel="stylesheet">`
+  - 例: `<script src="./scripts/main.js"></script>`
+  - 例: `<img src="./images/logo.png">`
+- **絶対パスを使用する場合:** もし絶対パスで記述する場合は、ベースパスを含めた完全なパスを記述する必要があります。
+  - 例: `<link href="/assessment/styles/main.css" rel="stylesheet">`
+  - **注意:** `<link href="/styles/main.css">` のようにルートからの絶対パスで記述すると、ベースパスが含まれないため正しく参照できません。
+
+### Cloudflare Workers のルート設定
+
+- Cloudflareダッシュボードで、カスタムドメイン (例: `oshichan.com`) に対してWorkerを割り当てる際、ルートパターンを正しく設定します。
+  - 例: `oshichan.com/assessment/*` を指定し、対象のWorkerサービスに紐付けます。
+
+この構造を理解し、ファイル参照とルーティングを一貫して行うことで、指定したパスプレフィックスでのアプリケーション公開が可能になります。
