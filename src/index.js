@@ -11,7 +11,7 @@ const formHtml = `
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>私の推しちゃん診断（仮）正しい動作ver#03</title>
+    <title>私の推しちゃん診断（仮）正しい動作ver#04</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
     <link href="/styles/main.css" rel="stylesheet" />
   </head>
