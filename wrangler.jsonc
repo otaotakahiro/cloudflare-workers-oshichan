@@ -4,7 +4,7 @@
  */
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "oshichan-diagnosis",
+  "name": "oshichan-assessment",
   "account_id": "5f1c8838f7dca81dc2e8e34ed17aee64",
   "main": "./src/index.js",
   "compatibility_date": "2025-04-04",
