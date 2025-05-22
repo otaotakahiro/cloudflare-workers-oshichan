@@ -157,8 +157,8 @@ const formHtml = `
 //   return c.notFound();
 // }); // このルートを削除
 
-// フォーム表示 (GET /oatoorihakat)
-app.get('/oatoorihakat', (c) => {
+// フォーム表示 (GET /)
+app.get('/', (c) => {
   return c.html(formHtml);
 });
 
