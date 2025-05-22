@@ -3,7 +3,6 @@ import { serveStatic } from 'hono/cloudflare-workers';
 import assessmentRoute from './routes/assessment.route';
 
 const app = new Hono();
-const assessmentApp = new Hono(); // 新しいHonoインスタンス
 
 // HTML content with loading overlay
 const formHtml = `
@@ -12,10 +11,9 @@ const formHtml = `
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <base href="/assessment/">
     <title>私の推しちゃん診断（仮）</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
-    <link href="styles/main.css" rel="stylesheet" />
+    <link href="/styles/main.css" rel="stylesheet" />
   </head>
   <body>
     <!-- Loading Overlay -->
@@ -119,7 +117,7 @@ const formHtml = `
 
         try {
           const formData = new FormData(event.target);
-          const response = await fetch('api/results', { // 先頭のスラッシュを削除
+          const response = await fetch('/api/results', {
             method: 'POST',
             body: JSON.stringify(Object.fromEntries(formData)),
             headers: {
@@ -130,7 +128,7 @@ const formHtml = `
           if (response.ok) {
             const result = await response.json();
             // Redirect to results page - loading overlay will disappear on navigation
-            window.location.href = 'result-tabs.html?id=' + result.id; // 先頭のスラッシュを削除
+            window.location.href = '/result-tabs.html?id=' + result.id;
           } else {
             const errorData = await response.json();
             throw new Error(errorData.error || '分析に失敗しました');
@@ -164,21 +162,12 @@ app.get('/', (c) => {
   return c.html(formHtml);
 });
 
-// APIルート (例: /assessment/api/results)
-// assessmentRoute内で定義されているルート(例: '/' や '/:id')が
-// /api/results をベースとして assessmentApp にマウントされる
-assessmentApp.route('/api/results', assessmentRoute(assessmentApp)); // assessmentAppインスタンスを渡す
+// APIルート
+app.route('/api/results', assessmentRoute(app));
 
-// 静的ファイル配信 (例: /assessment/styles/main.css は public/styles/main.css を提供)
+// 静的ファイル配信 (public ディレクトリをルートとする)
 // 重要: APIルートなど、より具体的なルートの後に配置する
-assessmentApp.use('/*', serveStatic({ root: './public' }));
-
-// --- メインのHonoアプリケーション ---
-// /assessment 以下のリクエストを assessmentApp にルーティング
-app.route('/assessment', assessmentApp);
-
-// ルートパスやその他のパスは必要に応じてメインアプリで設定
-// app.get('/', (c) => c.text('This is the main app!'));
+app.use('/*', serveStatic({ root: './public' }));
 
 // --- Worker エントリーポイント ---
 export default {
