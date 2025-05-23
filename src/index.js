@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { serveStatic } from 'hono/cloudflare-workers';
+// import { serveStatic } from 'hono/cloudflare-workers'; // serveStatic のインポートを削除
 import assessmentRoute from './routes/assessment.route';
 
 const app = new Hono();
@@ -123,7 +123,7 @@ const formHtml = `
 
         try {
           const formData = new FormData(event.target);
-          const response = await fetch('api/results', {
+          const response = await fetch('api/results', { // APIパスは base href により /assessment/api/results となる
             method: 'POST',
             body: JSON.stringify(Object.fromEntries(formData)),
             headers: {
@@ -164,52 +164,120 @@ const formHtml = `
 `;
 
 // --- Hono アプリケーション ---
-// ルートパス (".env") - 404 Not Found を返す
-// app.get('/', (c) => {
-//   return c.notFound();
-// }); // このルートを削除
 
 // フォーム表示 (GET /)
+// このワーカーが /assessment/ にマッピングされている場合、
+// oshichan.com/assessment/ へのアクセスでこのハンドラが呼ばれる。
 app.get('/', (c) => {
-  console.log('--- c.env.APP_BASE_URL ---');
-  console.log(c.env.APP_BASE_URL);
-  console.log('--------------------------');
+  console.log('--- Root Handler (/) ---');
+  console.log('Request URL:', c.req.url);
+  console.log('APP_BASE_URL from env:', c.env.APP_BASE_URL);
   const appBaseUrl = c.env.APP_BASE_URL || '';
   const renderedHtml = formHtml.replace(/__APP_BASE_URL__/g, appBaseUrl);
 
-  // Add logs to check the content of renderedHtml
-  console.log('--- Rendered HTML Check ---');
   console.log('Includes https://oshichan.com:', renderedHtml.includes('https://oshichan.com'));
-  console.log('First 500 chars of renderedHtml:', renderedHtml.substring(0, 500));
+  console.log('First 200 chars of renderedHtml:', renderedHtml.substring(0, 200));
   console.log('---------------------------');
 
   return c.html(renderedHtml);
 });
 
-// APIルート
-app.route('/api/results', assessmentRoute());
+// APIルート (パスを /assessment/api/results に変更)
+// formHtml内の <base href="/assessment/"> と fetch('api/results') により、
+// リクエストは /assessment/api/results になる。
+app.route('/assessment/api/results', assessmentRoute());
 
-// 静的ファイル配信
-// /assessment/ プレフィックスでアクセスされる public 内のすべてのファイルを対象とする
-app.use(
-  '/assessment/*',
-  serveStatic({
-    root: './public',
-    rewriteRequestPath: (path) => path.replace(/^\/assessment/, '')
-  })
-);
+// 静的ファイル配信 (ASSETS バインディングを使用)
+// /assessment/* へのリクエスト (例: /assessment/styles/main.css) を処理
+app.get('/assessment/*', async (c) => {
+  let assetPath = c.req.path.replace(/^\/assessment\//, '');
+  const originalUrl = new URL(c.req.url);
 
-// フォールバックとしてルートに診断フォームを返す (これは /assessment/ 以外のパス、または上記でファイルが見つからなかった場合に備えて)
-// ただし、Honoは通常、serveStatic でファイルが見つからない場合は次のミドルウェア/ルートに進むので、
-// この app.get('/', ...) が /assessment/* より前に定義されている現状では、
-// /assessment/ でファイルが見つからない場合に / が呼ばれることはない。
-// ここでは、意図しないパスへのアクセスを明示的に処理するなら別途 /* のルートが必要。
+  console.log(`--- Static Asset Handler (/assessment/*) ---`);
+  console.log(`Original request path: ${c.req.path}`);
+  console.log(`Derived assetPath for ASSETS binding: ${assetPath}`);
+
+  // /assessment/result-tabs?id=... のようなリクエストの場合、assetPath は 'result-tabs' となる。
+  // これを 'result-tabs.html' にマッピングする。
+  if (assetPath === 'result-tabs' && originalUrl.searchParams.has('id')) {
+    assetPath = 'result-tabs.html';
+    console.log(`Remapped assetPath to ${assetPath} for result-tabs with id.`);
+  }
+
+  // assetPathが空 (例: /assessment/ への直接アクセスで、上のルートにマッチしなかった場合) やディレクトリを示す場合
+  if (assetPath === '' || assetPath.endsWith('/')) {
+    // 今回の設計では /assessment/ は上の app.get('/') で formHtml を返す想定。
+    // /assessment/some-directory/ のような場合は index.html を探すか 404 を返す。
+    // ここでは、具体的なファイル名が期待されるため、そのようなリクエストは 404 とする。
+    console.log(`Asset path is empty or ends with '/', returning 404.`);
+    return c.notFound();
+  }
+
+  // ASSETS.fetch に渡すリクエストURLを構築
+  // ASSETSバインディングは、バインディングのルートからのパスを期待する
+  // (例: public/styles/main.css なら styles/main.css)
+  const assetRequestUrl = new URL(originalUrl.origin); // https://example.com
+  assetRequestUrl.pathname = assetPath; // styles/main.css
+  assetRequestUrl.search = originalUrl.search; // クエリパラメータを保持
+
+  try {
+    // c.req.raw を使うことで、元のリクエストのヘッダーやメソッドを保持
+    const assetRequest = new Request(assetRequestUrl.toString(), c.req.raw);
+    console.log(`Fetching from ASSETS: ${assetRequest.url}`);
+
+    let response = await c.env.ASSETS.fetch(assetRequest);
+
+    // アセットが見つからず (404)、かつパスに拡張子がなく、末尾スラッシュでもない場合 (例: /assessment/somepage)
+    // somepage.html を試すフォールバックロジック
+    if (response.status === 404 && !assetPath.includes('.') && !assetPath.endsWith('/')) {
+      const htmlAssetPath = assetPath + '.html';
+      console.log(`Asset ${assetPath} not found, trying ${htmlAssetPath}`);
+      const htmlAssetRequestUrl = new URL(originalUrl.origin);
+      htmlAssetRequestUrl.pathname = htmlAssetPath;
+      htmlAssetRequestUrl.search = originalUrl.search;
+      const htmlAssetRequest = new Request(htmlAssetRequestUrl.toString(), c.req.raw);
+      const htmlResponse = await c.env.ASSETS.fetch(htmlAssetRequest);
+
+      if (htmlResponse.status !== 404) {
+        console.log(`Found ${htmlAssetPath}`);
+        response = htmlResponse; // HTMLファイルが見つかったらそれを使用
+      }
+    }
+
+    if (response.status === 404) {
+        console.warn(`Asset not found in ASSETS binding: ${assetPath} (requested via ${c.req.path})`);
+        return c.notFound();
+    }
+
+    console.log(`Asset ${assetPath} found, status: ${response.status}, content-type: ${response.headers.get('Content-Type')}`);
+    return response;
+
+  } catch (e) {
+    console.error(`Error fetching asset '${assetPath}' via ASSETS binding:`, e);
+    return c.text(`Error fetching asset: ${assetPath}. ${e.message}`, 500);
+  }
+});
+
+
+// 以前の serveStatic 設定は削除
+// app.use(
+//   '/assessment/*',
+//   serveStatic({
+//     root: './public',
+//     rewriteRequestPath: (path) => path.replace(/^\/assessment/, '')
+//   })
+// );
+
 
 // console.log(); // デバッグ用のログは削除またはコメントアウトを推奨
 
 // --- Worker エントリーポイント ---
 export default {
   async fetch(request, env, context) {
+    // リクエストURLとパスをログに出力
+    console.log(`Incoming request: ${request.method} ${request.url}`);
+    const url = new URL(request.url);
+    console.log(`Pathname: ${url.pathname}`);
     return app.fetch(request, env, context);
   },
 };
