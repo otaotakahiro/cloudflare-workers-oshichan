@@ -15,6 +15,10 @@ const formHtml = `
     <title>私の推しちゃん診断（仮）</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
     <link href="styles/main.css" rel="stylesheet" />
+    <script>
+      // このスクリプトブロックはプレースホルダ置換のため、HTMLの早い段階に移動・作成
+      const APP_BASE_URL = '__APP_BASE_URL__'; // デプロイ時に置換されるプレースホルダ
+    </script>
   </head>
   <body>
     <!-- Loading Overlay -->
@@ -25,6 +29,7 @@ const formHtml = `
 
     <div class="container">
       <h1 class="main-title">私の推しちゃん診断（仮）#07</h1>
+      <p>Debug Base URL: __APP_BASE_URL__</p>
       <form onsubmit="submitForm(event)" class="max-w-lg mx-auto">
         <div class="mb-4 flex gap-4">
           <div class="w-1/2">
@@ -129,7 +134,13 @@ const formHtml = `
           if (response.ok) {
             const result = await response.json();
             // Redirect to results page - loading overlay will disappear on navigation
-            window.location.href = '/assessment/result-tabs.html?id=' + result.id;
+            // APP_BASE_URL を使って完全なURLを生成
+            if (APP_BASE_URL && APP_BASE_URL !== '__APP_BASE_URL__') {
+              window.location.href = APP_BASE_URL + '/assessment/result-tabs.html?id=' + result.id;
+            } else {
+              // 環境変数が設定されていない場合のフォールバック (ローカル開発用など)
+              window.location.href = '/assessment/result-tabs.html?id=' + result.id;
+            }
           } else {
             const errorData = await response.json();
             throw new Error(errorData.error || '分析に失敗しました');
@@ -160,7 +171,9 @@ const formHtml = `
 
 // フォーム表示 (GET /)
 app.get('/', (c) => {
-  return c.html(formHtml);
+  const appBaseUrl = c.env.APP_BASE_URL || ''; // 環境変数を取得、なければ空文字
+  const renderedHtml = formHtml.replace('__APP_BASE_URL__', appBaseUrl);
+  return c.html(renderedHtml);
 });
 
 // APIルート
