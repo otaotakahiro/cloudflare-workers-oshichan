@@ -185,7 +185,9 @@ app.get('/', (c) => {
 // APIルート (パスを /assessment/api/results に変更)
 // formHtml内の <base href="/assessment/"> と fetch('api/results') により、
 // リクエストは /assessment/api/results になる。
+// 末尾スラッシュなし・あり両対応のため、2つのルートを設定
 app.route('/assessment/api/results', assessmentRoute());
+app.route('/assessment/api/results/', assessmentRoute()); // 末尾スラッシュありも追加
 
 // 静的ファイル配信 (ASSETS バインディングを使用)
 // /assessment/* へのリクエスト (例: /assessment/styles/main.css) を処理
