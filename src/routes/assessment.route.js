@@ -17,13 +17,13 @@ import { BASE_DIAGNOSIS_SYSTEM_PROMPT, generateBaseDiagnosisUserPrompt } from '.
 // const diagnosisRouter = new Hono(); // これは不要
 
 /**
- * @returns {Hono}
+ * @param {Hono} app - メインのHonoアプリケーションインスタンス
  */
-export default function () { // 引数 app は不要に
-  const assessmentApp = new Hono(); // 新しいHonoインスタンスを作成
+export default function (app) { // 引数に app を取るように変更
+  // const assessmentApp = new Hono(); // 新しいHonoインスタンスは不要に
 
   // 結果を作成
-  assessmentApp.post('/', async context => {
+  app.post('/assessment/api/results', async context => { // パスをフルパスに変更
     console.log('診断リクエストを受け付けました。');
     try {
       const requestBody = await context.req.json();
@@ -131,7 +131,7 @@ export default function () { // 引数 app は不要に
   });
 
   // 結果を取得
-  assessmentApp.get('/:id', async context => {
+  app.get('/assessment/api/results/:id', async context => { // パスをフルパスに変更
     const id = context.req.param('id');
     const result = await getDiagnosisResult(context, id);
 
@@ -150,5 +150,5 @@ export default function () { // 引数 app は不要に
     });
   });
 
-  return assessmentApp; // 新しいHonoインスタンスを返す
+  // return assessmentApp; // Honoインスタンスを返す代わりに、app に直接登録したので何も返さない (または app を返す)
 }
