@@ -171,11 +171,18 @@ const formHtml = `
 
 // フォーム表示 (GET /)
 app.get('/', (c) => {
-  console.log('--- c.env.APP_BASE_URL ---'); // Log a specific key instead of the whole env
+  console.log('--- c.env.APP_BASE_URL ---');
   console.log(c.env.APP_BASE_URL);
   console.log('--------------------------');
-  const appBaseUrl = c.env.APP_BASE_URL || ''; // 環境変数を取得、なければ空文字
-  const renderedHtml = formHtml.replace('__APP_BASE_URL__', appBaseUrl);
+  const appBaseUrl = c.env.APP_BASE_URL || '';
+  const renderedHtml = formHtml.replace(/__APP_BASE_URL__/g, appBaseUrl);
+
+  // Add logs to check the content of renderedHtml
+  console.log('--- Rendered HTML Check ---');
+  console.log('Includes https://oshichan.com:', renderedHtml.includes('https://oshichan.com'));
+  console.log('First 500 chars of renderedHtml:', renderedHtml.substring(0, 500));
+  console.log('---------------------------');
+
   return c.html(renderedHtml);
 });
 
