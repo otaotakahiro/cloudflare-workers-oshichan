@@ -136,10 +136,10 @@ const formHtml = `
             // Redirect to results page - loading overlay will disappear on navigation
             // APP_BASE_URL を使って完全なURLを生成
             if (APP_BASE_URL && APP_BASE_URL !== '__APP_BASE_URL__') {
-              window.location.href = APP_BASE_URL + '/assessment/result-tabs.html?id=' + result.id;
+              window.location.href = APP_BASE_URL + '/assessment/result-tabs?id=' + result.id;
             } else {
               // 環境変数が設定されていない場合のフォールバック (ローカル開発用など)
-              window.location.href = '/assessment/result-tabs.html?id=' + result.id;
+              window.location.href = '/assessment/result-tabs?id=' + result.id;
             }
           } else {
             const errorData = await response.json();
