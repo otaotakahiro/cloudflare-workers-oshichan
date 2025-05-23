@@ -28,7 +28,7 @@ const formHtml = `
     </div>
 
     <div class="container">
-      <h1 class="main-title">私の推しちゃん診断（仮）#07</h1>
+      <h1 class="main-title">私の推しちゃん診断（仮）#08</h1>
       <p>Debug Base URL: __APP_BASE_URL__</p>
       <form onsubmit="submitForm(event)" class="max-w-lg mx-auto">
         <div class="mb-4 flex gap-4">
