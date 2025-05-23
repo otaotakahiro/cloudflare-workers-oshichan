@@ -171,6 +171,9 @@ const formHtml = `
 
 // フォーム表示 (GET /)
 app.get('/', (c) => {
+  console.log('--- c.env contents ---'); // Log c.env start
+  console.log(JSON.stringify(c.env, null, 2)); // Log c.env contents
+  console.log('----------------------'); // Log c.env end
   const appBaseUrl = c.env.APP_BASE_URL || ''; // 環境変数を取得、なければ空文字
   const renderedHtml = formHtml.replace('__APP_BASE_URL__', appBaseUrl);
   return c.html(renderedHtml);
