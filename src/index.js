@@ -129,7 +129,7 @@ const formHtml = `
           if (response.ok) {
             const result = await response.json();
             // Redirect to results page - loading overlay will disappear on navigation
-            window.location.href = 'result-tabs.html?id=' + result.id;
+            window.location.href = '/assessment/result-tabs.html?id=' + result.id;
           } else {
             const errorData = await response.json();
             throw new Error(errorData.error || '分析に失敗しました');
