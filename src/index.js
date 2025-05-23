@@ -187,22 +187,25 @@ app.get('/', (c) => {
 });
 
 // APIルート
-app.route('/api/results', assessmentRoute(app));
+app.route('/api/results', assessmentRoute());
 
 // 静的ファイル配信
-app.use('/styles/*', serveStatic({ root: './public' })); // CSSファイル用
-app.use('/scripts/*', serveStatic({ root: './public' })); // JSファイル用
-// app.use('/*', serveStatic({ root: './public' })); // こちらは一旦コメントアウトまたは削除し、上記でカバーされるか確認
+// /assessment/ プレフィックスでアクセスされる public 内のすべてのファイルを対象とする
+app.use(
+  '/assessment/*',
+  serveStatic({
+    root: './public',
+    rewriteRequestPath: (path) => path.replace(/^\/assessment/, '')
+  })
+);
 
-// ルートパス ("/") へのアクセスは診断フォームを返すので、
-// それ以外の public 直下のファイル (例: result-tabs.html や画像) を配信するには、
-// より具体的なパスか、あるいはより広範な serveStatic が必要。
-// もし public 直下に画像など他のアセットもあるなら、最終的なフォールバックとして /* も必要かもしれないが、
-// まずはJSとCSSに絞って確認。
-// 必要であれば、最も広範な /* の serveStatic は一番最後に置く。
-app.use('/*', serveStatic({ root: './public' , pathRewrite: (path) => path.replace(/^\/assessment/, '')}));
-// ↑もし /assessment/result-tabs のようなパスで public/result-tabs.html をサーブしたい場合、
-//   ベースパスの書き換えが必要になるかもしれないが、まずはシンプルに。
+// フォールバックとしてルートに診断フォームを返す (これは /assessment/ 以外のパス、または上記でファイルが見つからなかった場合に備えて)
+// ただし、Honoは通常、serveStatic でファイルが見つからない場合は次のミドルウェア/ルートに進むので、
+// この app.get('/', ...) が /assessment/* より前に定義されている現状では、
+// /assessment/ でファイルが見つからない場合に / が呼ばれることはない。
+// ここでは、意図しないパスへのアクセスを明示的に処理するなら別途 /* のルートが必要。
+
+// console.log(); // デバッグ用のログは削除またはコメントアウトを推奨
 
 // --- Worker エントリーポイント ---
 export default {

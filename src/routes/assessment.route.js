@@ -14,15 +14,16 @@ import { BASE_DIAGNOSIS_SYSTEM_PROMPT, generateBaseDiagnosisUserPrompt } from '.
 // diagnósticoPromptSchema のインポートは一旦コメントアウト (後で解決策を探す)
 // import { diagnósticoPromptSchema } from '../prompts/diagnosis.prompt.schema.js';
 
-const diagnosisRouter = new Hono();
+// const diagnosisRouter = new Hono(); // これは不要
 
 /**
- * @param {Hono} app
  * @returns {Hono}
  */
-export default function (app) {
+export default function () { // 引数 app は不要に
+  const assessmentApp = new Hono(); // 新しいHonoインスタンスを作成
+
   // 結果を作成
-  app.post('/', async context => {
+  assessmentApp.post('/', async context => {
     console.log('診断リクエストを受け付けました。');
     try {
       const requestBody = await context.req.json();
@@ -130,7 +131,7 @@ export default function (app) {
   });
 
   // 結果を取得
-  app.get('/:id', async context => {
+  assessmentApp.get('/:id', async context => {
     const id = context.req.param('id');
     const result = await getDiagnosisResult(context, id);
 
@@ -149,5 +150,5 @@ export default function (app) {
     });
   });
 
-  return app;
+  return assessmentApp; // 新しいHonoインスタンスを返す
 }
