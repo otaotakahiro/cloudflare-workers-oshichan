@@ -34,7 +34,7 @@ const formHtml = `
               name="familyName"
               type="text"
               required
-              value=""
+              value="クォン"
             />
           </div>
           <div class="w-1/2">
@@ -45,7 +45,7 @@ const formHtml = `
               name="firstName"
               type="text"
               required
-              value=""
+              value="ジヨン"
             />
           </div>
         </div>
@@ -58,7 +58,7 @@ const formHtml = `
               name="familyNameKana"
               type="text"
               required
-              value=""
+              value="クォン"
             />
           </div>
           <div class="w-1/2">
@@ -69,7 +69,7 @@ const formHtml = `
               name="firstNameKana"
               type="text"
               required
-              value=""
+              value="ジヨン"
             />
           </div>
         </div>
@@ -81,7 +81,7 @@ const formHtml = `
             name="birthdate"
             type="date"
             required
-            value=""
+            value="1988-08-18"
           />
         </div>
         <div class="mb-6">

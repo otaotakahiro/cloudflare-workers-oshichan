@@ -1,15 +1,21 @@
 // タブモジュールをインポート
-import { populateOverviewTab } from './tabs-overview.js';
+// import { populateOverviewTab } from './tabs-overview.js'; // 旧 推しデータタブ (性格・運勢タブに統合)
 // import { populateSkillsTab } from './tabs-skills.js'; // 削除
 // import { populateCareerTab } from './tabs-career.js'; // 削除
 // import { populateFutureTab } from './tabs-future.js'; // 削除
 // import { populatePlusTab } from './tabs-plus.js'; // 削除
-import { populateLivePerformanceTab } from './tabs-live-performance.js'; // 新規追加
+// import { populateLivePerformanceTab } from './tabs-live-performance.js'; // 性格・運勢タブに統合
+import { populatePersonalityFortuneTab } from './tabs-personality-fortune.js';
+import { populateLoveTendencyTab } from './tabs-love-tendency.js';
+import { populateFantasyContentTab } from './tabs-fantasy-content.js';
 
 // インポートの確認用ログ
 console.log('タブモジュールのインポート状態:');
-console.log('- populateOverviewTab:', typeof populateOverviewTab === 'function' ? '読み込み成功' : '読み込み失敗');
-console.log('- populateLivePerformanceTab:', typeof populateLivePerformanceTab === 'function' ? '読み込み成功' : '読み込み失敗'); // 新規追加
+// console.log('- populateOverviewTab:', typeof populateOverviewTab === 'function' ? '読み込み成功' : '読み込み失敗');
+// console.log('- populateLivePerformanceTab:', typeof populateLivePerformanceTab === 'function' ? '読み込み成功' : '読み込み失敗');
+console.log('- populatePersonalityFortuneTab:', typeof populatePersonalityFortuneTab === 'function' ? '読み込み成功' : '読み込み失敗');
+console.log('- populateLoveTendencyTab:', typeof populateLoveTendencyTab === 'function' ? '読み込み成功' : '読み込み失敗');
+console.log('- populateFantasyContentTab:', typeof populateFantasyContentTab === 'function' ? '読み込み成功' : '読み込み失敗');
 // console.log('- populateSkillsTab:', typeof populateSkillsTab === 'function' ? '読み込み成功' : '読み込み失敗'); // 削除
 // console.log('- populateCareerTab:', typeof populateCareerTab === 'function' ? '読み込み成功' : '読み込み失敗'); // 削除
 // console.log('- populateFutureTab:', typeof populateFutureTab === 'function' ? '読み込み成功' : '読み込み失敗'); // 削除
@@ -86,16 +92,18 @@ document.addEventListener('DOMContentLoaded', function() {
  */
 function initializeTabs() {
     const tabButtons = [
-        document.getElementById('overview-tab'),
-        document.getElementById('skills-tab') // 「ライブでの輝き」タブ
+        document.getElementById('personality-fortune-tab'),
+        document.getElementById('love-tendency-tab'),
+        document.getElementById('fantasy-content-tab')
         // 非表示にしたタブのボタンは含めない
     ].filter(button => button !== null);
 
     console.log('タブボタン取得状態:', tabButtons.length, '個見つかりました');
 
     const tabContents = [
-        document.getElementById('overview-content'),
-        document.getElementById('skills-content') // 「ライブでの輝き」タブのコンテンツエリア
+        document.getElementById('personality-fortune-content'),
+        document.getElementById('love-tendency-content'),
+        document.getElementById('fantasy-content-content')
         // 非表示にしたタブのコンテンツは含めない
     ].filter(content => content !== null);
 
@@ -172,35 +180,20 @@ async function loadResultData() {
         const apiResponse = await response.json();
         console.log('API Response received:', JSON.stringify(apiResponse, null, 2));
 
-        // apiResponse.result が profileData となる。期待する構造は { base: {...}, formData: (オプション) ... }
-        profileData = apiResponse.result;
-        console.log('Parsed profileData:', JSON.stringify(profileData, null, 2));
-
-        // 修正: profileData.diagnosis.base の存在を確認
-        if (!profileData || !profileData.diagnosis || !profileData.diagnosis.base) {
-            console.error('Error details:', {
-                hasProfileData: !!profileData,
-                hasDiagnosis: !!(profileData && profileData.diagnosis),
-                hasBase: !!(profileData && profileData.diagnosis && profileData.diagnosis.base)
-            });
-            showError('診断データ(base)が見つかりませんでした。');
-            throw new Error('Invalid data structure: base not found in profileData.diagnosis.');
+        if (!apiResponse || !apiResponse.result || !apiResponse.result.base || !apiResponse.result.base.baseDiagnosis) {
+            console.error('APIレスポンスの構造が不正です。診断データが見つかりません。', apiResponse);
+            showError('診断データの形式が正しくありません。');
+            throw new Error('Invalid API response structure: base.baseDiagnosis not found.');
         }
 
-        // formData はオプションとして扱う
-        if (!profileData.formData) {
-            console.warn('フォームデータ(formData)がprofileData内に見つかりませんでした。ヘッダー情報の一部が欠けるか、baseから推測されます。');
-        }
+        const diagnosisResult = apiResponse.result.base.baseDiagnosis; // OpenAIからの診断結果オブジェクト
+        const formData = apiResponse.result.formData; // フォーム入力データ
 
-        // 修正: updateProfileInfo に渡す引数を調整
-        updateProfileInfo(profileData.formData, profileData.diagnosis.base);
-        // 修正: populateAllTabs は profileData.diagnosis を渡すか、内部で .diagnosis.base を見るようにする。
-        // populateAllTabs の実装を確認後、適切な方を渡す。
-        // 現時点では、populateAllTabs が profileData.base を直接参照している可能性があるため、
-        // populateAllTabs(profileData.diagnosis); のように変更するか、
-        // populateAllTabs() のままにして populateAllTabs 内部を修正するか検討。
-        // まずは呼び出し側で profileData.diagnosis を渡してみる。
-        populateAllTabs(profileData.diagnosis); // 渡すデータを変更
+        console.log('Parsed diagnosisResult:', JSON.stringify(diagnosisResult, null, 2));
+        console.log('Parsed formData:', JSON.stringify(formData, null, 2));
+
+        updateProfileInfo(formData, diagnosisResult); // formDataと診断結果全体を渡す
+        populateAllTabs(diagnosisResult); // 診断結果オブジェクト全体を渡す
 
     } catch (error) {
         console.error('Error loading result data:', error);
@@ -210,22 +203,20 @@ async function loadResultData() {
 
 /**
  * プロファイル情報（ヘッダー部分）を更新
- * @param {Object} userInfo - ユーザー情報オブジェクト
+ * @param {Object} formData - フォーム入力データ
+ * @param {Object} diagnosisData - OpenAIからの診断結果オブジェクト全体
  */
-function updateProfileInfo(formData, baseData) {
+function updateProfileInfo(formData, diagnosisData) {
     let oshiFullName = '推し';
     let oshiGender = '-';
     let oshiBirthDate = '-';
 
-    // formData が存在する場合のみ、そこから情報を取得
     if (formData) {
         if (formData.familyName && formData.firstName) {
             oshiFullName = `${formData.familyName} ${formData.firstName}`.trim();
-        } else if (formData.name) {
+        } else if (formData.name) { // フォールバックとしてnameキーも見る
             oshiFullName = formData.name.trim();
         }
-        // formData に名前情報がない場合でも、baseData からのフォールバックは後続で行う
-
         if (formData.gender) {
             const genderMap = {
                 male: '男性',
@@ -248,33 +239,22 @@ function updateProfileInfo(formData, baseData) {
         }
     }
 
-    // formData に名前情報がなかった、または formData 自体がなかった場合、baseData.publicPersona からの抽出を試みる
-    if (oshiFullName === '推し' && baseData && baseData.publicPersona) {
-        const match = baseData.publicPersona.match(/^(.*?)(は|のステージ)/);
+    // formDataに名前情報がない場合、diagnosisDataのpublicPersonaから推測 (これは補助的なので無くても良い)
+    if (oshiFullName === '推し' && diagnosisData && diagnosisData.publicPersona) {
+        const match = diagnosisData.publicPersona.match(/^(.*?)(は|のステージ)/);
         if (match && match[1]) {
             oshiFullName = match[1].trim();
         }
     }
 
     const oshiNamePlaceholder = document.getElementById('oshi-name-placeholder');
-    if (oshiNamePlaceholder) {
-        oshiNamePlaceholder.textContent = oshiFullName;
-    }
-
+    if (oshiNamePlaceholder) oshiNamePlaceholder.textContent = oshiFullName;
     const fullNameElement = document.getElementById('full-name');
-    if (fullNameElement) {
-        fullNameElement.textContent = oshiFullName;
-    }
-
+    if (fullNameElement) fullNameElement.textContent = oshiFullName;
     const genderElement = document.getElementById('gender');
-    if (genderElement) {
-        genderElement.textContent = oshiGender;
-    }
-
+    if (genderElement) genderElement.textContent = oshiGender;
     const birthDateElement = document.getElementById('birth-date');
-    if (birthDateElement) {
-        birthDateElement.textContent = oshiBirthDate;
-    }
+    if (birthDateElement) birthDateElement.textContent = oshiBirthDate;
 
     const analysisDateElement = document.getElementById('analysis-date');
     if (analysisDateElement) {
@@ -285,29 +265,49 @@ function updateProfileInfo(formData, baseData) {
 
 /**
  * 全タブのデータを設定
+ * @param {Object} diagnosisData - OpenAIからの診断結果オブジェクト全体
  */
-function populateAllTabs(data) {
-    console.log('全タブのデータを設定します');
-    // profileData と profileData.base の存在をチェック
-    if (!data || !data.base) {
-        console.error('プロフィールデータまたはbaseデータがないため、タブデータを設定できません');
+function populateAllTabs(diagnosisData) {
+    console.log('全タブのデータを設定します。受け取ったデータ:', diagnosisData);
+
+    if (!diagnosisData) {
+        console.error('診断データがないため、タブデータを設定できません');
+        showError('表示する診断データがありません。');
         return;
     }
 
     try {
-        console.log('基本データタブを設定...');
-        populateOverviewTab(data.base); // data.base を渡すように変更
-
-        console.log('ライブでの輝きタブを設定...');
-        if (data.base.livePerformanceHints) {
-            populateLivePerformanceTab(data.base.livePerformanceHints); // data.base.livePerformanceHints を渡す
+        // 性格・運勢タブ (baseDiagnosisの主要項目 + importantThingsInLifeTop3, currentFortune, futureTurningPoint, livePerformanceHints)
+        // populatePersonalityFortuneTab は diagnosisData (baseDiagnosis全体) を受け取るように設計されている
+        if (diagnosisData) { // diagnosisData自体がbaseDiagnosisオブジェクト
+            populatePersonalityFortuneTab(diagnosisData);
+            console.log('性格・運勢タブを設定...');
         } else {
-            console.warn('ライブでの輝きデータ(livePerformanceHints)がありません');
-            const skillsContent = document.getElementById('skills-content');
-            if (skillsContent) {
-                skillsContent.innerHTML = '<div class="p-4 text-gray-500">ライブパフォーマンスに関するヒントはありません。</div>';
-            }
+            console.warn('性格・運勢タブのデータ(diagnosisData全体)が見つかりません。');
+            const pfContent = document.getElementById('personality-fortune-content');
+            if (pfContent) pfContent.innerHTML = '<div class="p-4 text-gray-500">性格・運勢データが見つかりませんでした。</div>';
         }
+
+        // 恋愛傾向タブ
+        if (diagnosisData.loveTendency) {
+            populateLoveTendencyTab(diagnosisData.loveTendency);
+            console.log('恋愛傾向タブを設定...');
+        } else {
+            console.warn('loveTendency データが見つかりません。');
+            const ltContent = document.getElementById('love-tendency-content');
+            if (ltContent) ltContent.innerHTML = '<div class="p-4 text-gray-500">恋愛傾向データが見つかりませんでした。</div>';
+        }
+
+        // 妄想コンテンツタブ
+        if (diagnosisData.fantasyContent) {
+            populateFantasyContentTab(diagnosisData.fantasyContent);
+            console.log('妄想コンテンツタブを設定...');
+        } else {
+            console.warn('fantasyContent データが見つかりません。');
+            const fcContent = document.getElementById('fantasy-content-content');
+            if (fcContent) fcContent.innerHTML = '<div class="p-4 text-gray-500">妄想コンテンツデータが見つかりませんでした。</div>';
+        }
+
         console.log('全タブのデータ設定が完了しました');
     } catch (error) {
         console.error('タブデータの設定中にエラーが発生しました:', error);

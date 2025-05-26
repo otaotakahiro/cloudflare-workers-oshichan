@@ -23,11 +23,14 @@
         </div>
         <div class="inline-flex flex-col sm:flex-row w-full justify-center border-t">
           <!-- タブボタン (adjusted borders for header context) -->
-          <button id="overview-tab" class="tab-button active py-1.5 px-4 text-center font-medium text-sm border-b-2 border-blue-500 mb-px sm:mb-0 sm:py-2">
-            <i class="fas fa-user-circle mr-1"></i>基本データ
+          <button id="personality-fortune-tab" class="tab-button active py-1.5 px-4 text-center font-medium text-sm border-b-2 border-blue-500 mb-px sm:mb-0 sm:py-2">
+            <i class="fas fa-heartbeat mr-1"></i>性格・運勢
           </button>
-          <button id="skills-tab" class="tab-button py-1.5 px-4 text-center font-medium text-sm text-gray-500 hover:text-gray-700 border-b-2 border-transparent hover:border-gray-300 mb-px sm:mb-0 sm:py-2">
-            <i class="fas fa-microphone-alt mr-1"></i>ライブでの輝き
+          <button id="love-tendency-tab" class="tab-button py-1.5 px-4 text-center font-medium text-sm text-gray-500 hover:text-gray-700 border-b-2 border-transparent hover:border-gray-300 mb-px sm:mb-0 sm:py-2">
+            <i class="fas fa-grin-hearts mr-1"></i>恋愛傾向
+          </button>
+          <button id="fantasy-content-tab" class="tab-button py-1.5 px-4 text-center font-medium text-sm text-gray-500 hover:text-gray-700 border-b-2 border-transparent hover:border-gray-300 mb-px sm:mb-0 sm:py-2">
+            <i class="fas fa-theater-masks mr-1"></i>妄想コンテンツ
           </button>
           <button id="career-tab" class="tab-button py-1.5 px-4 text-center font-medium text-sm text-gray-500 hover:text-gray-700 border-b-2 border-transparent hover:border-gray-300 mb-px sm:mb-0 sm:py-2" style="display: none;">
             <i class="fas fa-briefcase mr-1"></i>キャリア適性
@@ -54,16 +57,19 @@
 
       <!-- タブコンテンツ -->
       <div class="tab-content-container" style="padding: 0;">
-        <!-- 基本データタブの内容 (旧 人物概要タブ) -->
-        <div class="tab-content active" id="overview-content">
-          <!-- ここに baseDiagnosis の publicPersona, privatePersona, mentalAspects, socialStance, lyingHabits を表示するUIを後で構築 -->
-          <div class="p-4"> (基本データタブの内容はここに表示されます) </div>
+        <!-- 性格・運勢タブの内容 -->
+        <div class="tab-content active" id="personality-fortune-content">
+          <div class="p-4"> (性格・運勢タブの内容はここに表示されます) </div>
         </div>
 
-        <!-- ライブでの輝きタブの内容 (旧 能力評価タブ) -->
-        <div class="tab-content" id="skills-content">
-          <!-- ここに baseDiagnosis の livePerformanceHints を表示するUIを後で構築 -->
-           <div class="p-4"> (ライブでの輝きタブの内容はここに表示されます) </div>
+        <!-- 恋愛傾向タブの内容 -->
+        <div class="tab-content" id="love-tendency-content">
+           <div class="p-4"> (恋愛傾向タブの内容はここに表示されます) </div>
+        </div>
+
+        <!-- 妄想コンテンツタブの内容 -->
+        <div class="tab-content" id="fantasy-content-content">
+           <div class="p-4"> (妄想コンテンツタブの内容はここに表示されます) </div>
         </div>
 
         <!-- キャリア適性タブの内容 (非表示) -->
@@ -101,7 +107,9 @@
     </div>
 
     <!-- 各タブのスクリプトを明示的に読み込み -->
-    <script type="module" src="/scripts/tabs-overview.js"></script>
+    <script type="module" src="/scripts/tabs-personality-fortune.js"></script>
+    <script type="module" src="/scripts/tabs-love-tendency.js"></script>
+    <script type="module" src="/scripts/tabs-fantasy-content.js"></script>
     <script type="module" src="/scripts/tabs-main.js"></script>
 
     <script>
