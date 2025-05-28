@@ -57,7 +57,7 @@ async function fetchAndProcessCategory(category, formData, externalSiteContents,
 
   console.log(`カテゴリ「${label}」の診断を開始します。`);
   try {
-    const diagnosisResult = await openaiService.generateDiagnosis(systemPrompt, userPrompt);
+    const diagnosisResult = await openaiService.callApiWithPrompts(systemPrompt, userPrompt);
     console.log(`カテゴリ「${label}」の診断結果:`, JSON.stringify(diagnosisResult, null, 2));
     if (diagnosisResult.error) {
       console.error(`カテゴリ「${label}」のOpenAI APIからのエラー:`, diagnosisResult.error);

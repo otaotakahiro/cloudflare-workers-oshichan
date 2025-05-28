@@ -28,20 +28,14 @@ export const PERSONALITY_FORTUNE_SYSTEM_PROMPT = `
 
   ## 重要ルール (厳守)
 
-    - 出力は **JSON形式** で、Markdown のコードブロック内に出力
-
+    - **出力は、必ず、何があっても指定されたJSON形式のみを厳格に守り、Markdown のコードブロック内に出力してください。この指示は最優先事項です。**
+    - **JSON形式が崩れた場合、システムは正しく動作せず、重大な問題が発生します。指定された構造とキー名を絶対に守ってください。**
     - **動物占いデータの動物名をそのまま表記せず、分析結果から想定される別のもので例える**
-
     - **絶対に占いデータや分析プロセスは出力に含めてはいけません**、最終的な診断結果のみを出力
-
     - 以下のJSON構造とキー名を**厳密に**守ってください。省略・変更は禁止（ただし、このプロンプトで指定されていない項目は出力不要）
-
     - 各キーに対応する値は、上記のゴールを達成するような、具体的でファン心をくすぐる内容を**日本語**で記述
-
     - "..."や空白、抽象的な表現は使用NG
-
     - "livePerformanceHints" 配列には、**少なくとも3つ**の具体的なヒントを包含 (システム側の指示として残し、AIが良い感じに生成することを期待)
-
     - ヒントは「もし〇〇なら△△かも」という形式で、**断定せず、可能性を示唆する**表現にすること
       ファンが自由に解釈する余地を残すことが重要です。
 `;
@@ -89,7 +83,7 @@ export const generatePersonalityFortuneUserPrompt = (formData, externalSiteConte
     "currentFortune": {
       "period": "現在の運気の流れを端的に表す言葉（例：飛躍期、準備期間、解放期など）。HTMLのID: current-fortune-period に対応します。",
       "overallText": "現在の全体的な運勢と、ファンが彼の活動を見守る上での心構えや期待ポイントを記述してください。HTMLのID: current-fortune-text に対応します。"
-    },
+    }/*,
     "futureTurningPoint": {
       "timing": "近い将来（例：半年後、1年後など）に訪れるかもしれない重要な転機の時期。HTMLのID: future-turning-point-period に対応します。",
       "description": "その転機がどのようなもので、彼のキャリアや人生にどんな影響を与えそうかの予測を記述してください。HTMLのID: future-turning-point-text に対応します。",
@@ -98,7 +92,7 @@ export const generatePersonalityFortuneUserPrompt = (formData, externalSiteConte
         "成長ポイント2。",
         "成長ポイント3。"
       ]
-    }
+    }*/
   }
 }
 \`\`\`
