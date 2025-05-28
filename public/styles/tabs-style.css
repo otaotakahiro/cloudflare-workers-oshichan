@@ -128,7 +128,7 @@ li {
 
 /* タブコンテンツ */
 .tab-content-container {
-    background-color: #ffffff;
+    /* background-color: #ffffff; */
     border-radius: 0.5rem;
     padding: 0;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);

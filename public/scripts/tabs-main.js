@@ -6,8 +6,8 @@
 // import { populatePlusTab } from './tabs-plus.js'; // 削除
 // import { populateLivePerformanceTab } from './tabs-live-performance.js'; // 性格・運勢タブに統合
 import { populatePersonalityFortuneTab } from './tabs-personality-fortune.js';
-import { populateLoveTendencyTab } from './tabs-love-tendency.js';
-import { populateFantasyContentTab } from './tabs-fantasy-content.js';
+import { displayLoveTendency as populateLoveTendencyTab } from './tabs-love-tendency.js';
+import { displayFantasyContent as populateFantasyContentTab } from './tabs-fantasy-content.js';
 
 // インポートの確認用ログ
 console.log('タブモジュールのインポート状態:');
@@ -84,6 +84,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // スティッキータブ関連の初期化（スクロールとリサイズに対応）
     initializeStickyActiveTab();
 
+    // フッターの年を更新
+    const footerYearElement = document.getElementById('footer-year');
+    if (footerYearElement) {
+        footerYearElement.textContent = new Date().getFullYear();
+    }
+
     console.log('初期化処理が完了しました');
 });
 
@@ -119,9 +125,19 @@ function initializeTabs() {
         const tabId = `${baseId}-content`;
 
         button.addEventListener('click', function() {
-            tabButtons.forEach(btn => btn.classList.remove('active'));
+            tabButtons.forEach(btn => {
+                btn.classList.remove('active');
+                // Reset styles for inactive tabs
+                btn.style.borderColor = 'transparent';
+                btn.style.color = 'var(--main-text-color)';
+            });
             tabContents.forEach(content => content.classList.remove('active'));
+
             this.classList.add('active');
+            // Set styles for active tab
+            this.style.borderColor = 'var(--accent-color)';
+            this.style.color = 'var(--accent-color)';
+
             const contentElement = document.getElementById(tabId);
             if (contentElement) {
                 contentElement.classList.add('active');
@@ -132,7 +148,7 @@ function initializeTabs() {
     });
 
     if (tabButtons.length > 0) {
-        tabButtons[0].click();
+        tabButtons[0].click(); // Initialize with the first tab active
     }
 }
 
@@ -180,20 +196,29 @@ async function loadResultData() {
         const apiResponse = await response.json();
         console.log('API Response received:', JSON.stringify(apiResponse, null, 2));
 
-        if (!apiResponse || !apiResponse.result || !apiResponse.result.base || !apiResponse.result.base.baseDiagnosis) {
-            console.error('APIレスポンスの構造が不正です。診断データが見つかりません。', apiResponse);
-            showError('診断データの形式が正しくありません。');
-            throw new Error('Invalid API response structure: base.baseDiagnosis not found.');
+        // データ構造のチェックを修正
+        // apiResponse.result に personalityFortune などが含まれることを期待
+        if (!apiResponse || !apiResponse.result || !apiResponse.result.personalityFortune) { // まず personalityFortune があるかチェック
+            console.error('APIレスポンスの構造が不正です。personalityFortune データが見つかりません。', apiResponse);
+            showError('診断データの形式が正しくありません。(PFNF)'); // PFNF: PersonalityFortune Not Found
+            throw new Error('Invalid API response structure: result.personalityFortune not found.');
         }
 
-        const diagnosisResult = apiResponse.result.base.baseDiagnosis; // OpenAIからの診断結果オブジェクト
-        const formData = apiResponse.result.formData; // フォーム入力データ
+        // diagnosisResult には APIレスポンスの result オブジェクト全体を格納
+        const diagnosisResult = apiResponse.result;
+        // formData は apiResponse.result.formData にあると期待。なければ空オブジェクト
+        const formData = apiResponse.result.formData || {};
 
-        console.log('Parsed diagnosisResult:', JSON.stringify(diagnosisResult, null, 2));
+        console.log('Parsed diagnosisResult (full result object):', JSON.stringify(diagnosisResult, null, 2));
         console.log('Parsed formData:', JSON.stringify(formData, null, 2));
 
-        updateProfileInfo(formData, diagnosisResult); // formDataと診断結果全体を渡す
-        populateAllTabs(diagnosisResult); // 診断結果オブジェクト全体を渡す
+        if (Object.keys(formData).length === 0) {
+            console.warn("formData is empty. Profile information might be incomplete.");
+            // formDataが空の場合、推し名などが表示されない可能性があることをユーザーに伝えるか検討
+        }
+
+        updateProfileInfo(formData, diagnosisResult.personalityFortune); // formData と personalityFortune データを渡す
+        populateAllTabs(diagnosisResult); // 診断結果オブジェクト全体 (personalityFortune, loveTendency などが含まれる) を渡す
 
     } catch (error) {
         console.error('Error loading result data:', error);
@@ -204,9 +229,9 @@ async function loadResultData() {
 /**
  * プロファイル情報（ヘッダー部分）を更新
  * @param {Object} formData - フォーム入力データ
- * @param {Object} diagnosisData - OpenAIからの診断結果オブジェクト全体
+ * @param {Object} personalityFortuneData - personalityFortune データ
  */
-function updateProfileInfo(formData, diagnosisData) {
+function updateProfileInfo(formData, personalityFortuneData) {
     let oshiFullName = '推し';
     let oshiGender = '-';
     let oshiBirthDate = '-';
@@ -234,33 +259,46 @@ function updateProfileInfo(formData, diagnosisData) {
                 }
             } catch (e) {
                 console.warn('生年月日の日付形式が無効です:', formData.birthdate, e);
-                oshiBirthDate = formData.birthdate;
+                oshiBirthDate = formData.birthdate; // 無効な場合はそのまま表示
             }
         }
     }
 
-    // formDataに名前情報がない場合、diagnosisDataのpublicPersonaから推測 (これは補助的なので無くても良い)
-    if (oshiFullName === '推し' && diagnosisData && diagnosisData.publicPersona) {
-        const match = diagnosisData.publicPersona.match(/^(.*?)(は|のステージ)/);
-        if (match && match[1]) {
-            oshiFullName = match[1].trim();
-        }
+    // Update oshi name in the new title structure
+    const oshiNameMainElement = document.getElementById('oshi-name-placeholder-main');
+    if (oshiNameMainElement) {
+        oshiNameMainElement.textContent = oshiFullName !== '推し' ? oshiFullName : ''; // 名前がデフォルト値なら空欄
+    } else {
+        console.warn('Element with ID "oshi-name-placeholder-main" not found.');
     }
 
-    const oshiNamePlaceholder = document.getElementById('oshi-name-placeholder');
-    if (oshiNamePlaceholder) oshiNamePlaceholder.textContent = oshiFullName;
+    // Update other profile info (氏名, 性別, 生年月日)
     const fullNameElement = document.getElementById('full-name');
     if (fullNameElement) fullNameElement.textContent = oshiFullName;
+
     const genderElement = document.getElementById('gender');
     if (genderElement) genderElement.textContent = oshiGender;
+
     const birthDateElement = document.getElementById('birth-date');
     if (birthDateElement) birthDateElement.textContent = oshiBirthDate;
 
+    // 分析日
     const analysisDateElement = document.getElementById('analysis-date');
     if (analysisDateElement) {
-        const now = new Date();
-        analysisDateElement.textContent = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日`;
+        const today = new Date();
+        analysisDateElement.textContent = `${today.getFullYear()}年${today.getMonth() + 1}月${today.getDate()}日`;
     }
+
+    // デバッグログの追加
+    console.log('Updated Profile Info:', {
+        oshiFullName,
+        oshiGender,
+        oshiBirthDate,
+        analysisDate: analysisDateElement ? analysisDateElement.textContent : 'N/A'
+    });
+
+    // タブのデータ投入処理 (personalityFortuneData はここで使われていないが、将来的に使う可能性を考慮して引数に残す)
+    // displayFortuneData(personalityFortuneData); // この呼び出しは populateAllTabs に置き換えられた想定
 }
 
 /**
@@ -268,50 +306,24 @@ function updateProfileInfo(formData, diagnosisData) {
  * @param {Object} diagnosisData - OpenAIからの診断結果オブジェクト全体
  */
 function populateAllTabs(diagnosisData) {
-    console.log('全タブのデータを設定します。受け取ったデータ:', diagnosisData);
-
+    console.log('全てのタブへのデータ投入を開始します。診断データ:', diagnosisData);
     if (!diagnosisData) {
-        console.error('診断データがないため、タブデータを設定できません');
-        showError('表示する診断データがありません。');
+        showError('診断データが提供されていません。タブへのデータ投入を中止します。');
         return;
     }
 
+    // 各タブのデータ投入関数を呼び出す
     try {
-        // 性格・運勢タブ (baseDiagnosisの主要項目 + importantThingsInLifeTop3, currentFortune, futureTurningPoint, livePerformanceHints)
-        // populatePersonalityFortuneTab は diagnosisData (baseDiagnosis全体) を受け取るように設計されている
-        if (diagnosisData) { // diagnosisData自体がbaseDiagnosisオブジェクト
-            populatePersonalityFortuneTab(diagnosisData);
-            console.log('性格・運勢タブを設定...');
-        } else {
-            console.warn('性格・運勢タブのデータ(diagnosisData全体)が見つかりません。');
-            const pfContent = document.getElementById('personality-fortune-content');
-            if (pfContent) pfContent.innerHTML = '<div class="p-4 text-gray-500">性格・運勢データが見つかりませんでした。</div>';
-        }
+        // populateOverviewTab(diagnosisData); // 統合されたので不要
+        // populateLivePerformanceTab(diagnosisData); // 統合されたので不要
+        populatePersonalityFortuneTab(diagnosisData);
+        populateLoveTendencyTab(diagnosisData);
+        populateFantasyContentTab(diagnosisData);
 
-        // 恋愛傾向タブ
-        if (diagnosisData.loveTendency) {
-            populateLoveTendencyTab(diagnosisData.loveTendency);
-            console.log('恋愛傾向タブを設定...');
-        } else {
-            console.warn('loveTendency データが見つかりません。');
-            const ltContent = document.getElementById('love-tendency-content');
-            if (ltContent) ltContent.innerHTML = '<div class="p-4 text-gray-500">恋愛傾向データが見つかりませんでした。</div>';
-        }
-
-        // 妄想コンテンツタブ
-        if (diagnosisData.fantasyContent) {
-            populateFantasyContentTab(diagnosisData.fantasyContent);
-            console.log('妄想コンテンツタブを設定...');
-        } else {
-            console.warn('fantasyContent データが見つかりません。');
-            const fcContent = document.getElementById('fantasy-content-content');
-            if (fcContent) fcContent.innerHTML = '<div class="p-4 text-gray-500">妄想コンテンツデータが見つかりませんでした。</div>';
-        }
-
-        console.log('全タブのデータ設定が完了しました');
+        // diagnoseApiStructure(diagnosisData); // この関数は構造チェック用なので、表示ロジックとは別
     } catch (error) {
-        console.error('タブデータの設定中にエラーが発生しました:', error);
-        showError('データの表示中にエラーが発生しました: ' + error.message);
+        console.error('タブへのデータ投入中にエラーが発生しました:', error);
+        showError(`タブの表示中にエラーが発生しました: ${error.message}`);
     }
 }
 

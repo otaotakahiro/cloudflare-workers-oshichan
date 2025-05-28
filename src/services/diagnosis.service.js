@@ -8,88 +8,159 @@ import { OpenaiService } from '../infrastructures/ai/openai.service.js';
 //   generateBaseDiagnosisUserPrompt,
 // } from '../prompts/base-diagnosis.prompt.js';
 
-export const generateDiagnosis = async (
-  systemPrompt,
-  userPrompt,
-  formData,
-  schema, // 現在は未使用だが必要に応じて活用
-  env,
-  // externalSiteContents は userPrompt生成に使うため、この関数へは不要
-) => {
-  console.log("Generating diagnosis for:", formData);
-  // if (externalSiteContents) { // externalSiteContents はここでは直接使わない
-  //   console.log("With external site contents:", externalSiteContents);
-  // }
+import { увлажнение_фруктами, fetchExternalSiteContent } from './external-site.service';
+import {
+  generatePersonalityFortuneUserPrompt,
+  PERSONALITY_FORTUNE_SYSTEM_PROMPT,
+} from '../prompts/personality-fortune.prompt.js'; // 新しいプロンプトをインポート
+import {
+  LOVE_TENDENCY_SYSTEM_PROMPT,
+  generateLoveTendencyUserPrompt,
+} from '../prompts/love-tendency.prompt.js';
+import {
+  FANTASY_CONTENT_SYSTEM_PROMPT,
+  generateFantasyContentUserPrompt,
+} from '../prompts/fantasy-content.prompt.js';
+import { saveDiagnosisResult } from './kv.service.js'; // saveDiagnosisResult を直接インポート
+import { gemeinsame_Merkmale } from '../utils/utils.js';
+// import { fetchExternalSiteDataParallel } from './external-site.service.js'; // 重複インポートなのでコメントアウトまたは削除
 
-  // --- OpenAI Service を使った分析処理 (ベース診断のみ実装) ---
-  let baseDiagnosisResult = null;
+// const openaiService = new OpenaiService(); // グローバルスコープでのインスタンス化を削除
+let openaiService; // 遅延初期化のため、グローバルスコープで宣言のみ
+
+// 診断結果のカテゴリごとの処理をまとめるイメージ (将来的な拡張のため)
+const DIAGNOSIS_CATEGORIES = (env) => ({
+  personalityFortune: {
+    systemPrompt: PERSONALITY_FORTUNE_SYSTEM_PROMPT,
+    userPromptGenerator: generatePersonalityFortuneUserPrompt,
+    apiKey: env.OPENAI_API_KEY,
+    label: '性格・運勢'
+  },
+  loveTendency: {
+    systemPrompt: LOVE_TENDENCY_SYSTEM_PROMPT,
+    userPromptGenerator: generateLoveTendencyUserPrompt,
+    apiKey: env.OPENAI_API_KEY,
+    label: '恋愛傾向'
+  },
+  fantasyContent: {
+    systemPrompt: FANTASY_CONTENT_SYSTEM_PROMPT,
+    userPromptGenerator: generateFantasyContentUserPrompt,
+    apiKey: env.OPENAI_API_KEY,
+    label: '妄想コンテンツ'
+  }
+});
+
+async function fetchAndProcessCategory(category, formData, externalSiteContents, env) {
+  const { systemPrompt, userPromptGenerator, apiKey, label } = category;
+  const openaiService = new OpenaiService(apiKey);
+  const userPrompt = userPromptGenerator(formData, externalSiteContents);
+
+  console.log(`カテゴリ「${label}」の診断を開始します。`);
   try {
-    // APIキーは渡されたenvオブジェクトから取得
-    if (!env || !env.OPENAI_API_KEY) {
-      console.error('OpenAI API key is not available in env object:', env);
-      throw new Error('OpenAI API key is not configured in environment variables or env object is missing.');
+    const diagnosisResult = await openaiService.generateDiagnosis(systemPrompt, userPrompt);
+    console.log(`カテゴリ「${label}」の診断結果:`, JSON.stringify(diagnosisResult, null, 2));
+    if (diagnosisResult.error) {
+      console.error(`カテゴリ「${label}」のOpenAI APIからのエラー:`, diagnosisResult.error);
+      return { [`${Object.keys(category)[0]}Error`]: diagnosisResult.error }; // 例: personalityFortuneError
     }
-    const openaiService = new OpenaiService(env.OPENAI_API_KEY, env.OPENAI_MODEL || 'gpt-4-turbo');
+    return diagnosisResult; // { personalityFortune: { ... } } または { loveTendency: { ... } }
+  } catch (error) {
+    console.error(`カテゴリ「${label}」の診断中に予期せぬエラー:`, error);
+    return { [`${Object.keys(category)[0]}Error`]: `カテゴリ「${label}」の処理中にエラーが発生しました: ${error.message}` };
+  }
+}
 
-    // userPrompt は引数で受け取るため、ここでの再生成は不要
-    // const localUserPrompt = generateBaseDiagnosisUserPrompt(formData, externalSiteContents);
+export async function generateDiagnosis(formData, env) {
+  // 関数の最初で openaiService を初期化する
+  // これにより、env から OPENAI_API_KEY と OPENAI_MODEL を渡すことができる
+  if (!openaiService) {
+    if (!env.OPENAI_API_KEY) {
+      console.error('OPENAI_API_KEY is not set in env.');
+      return { error: 'OpenAI API Key is not configured.' };
+    }
+    openaiService = new OpenaiService(env.OPENAI_API_KEY, env.OPENAI_MODEL || 'gpt-4.1-mini');
+  }
 
-    console.log("--- Calling OpenAI for Base Diagnosis ---");
-    console.log("System Prompt:", systemPrompt);
-    console.log("User Prompt:", userPrompt);
+  let finalDiagnosisResult = {
+    // 初期構造を維持しつつ、各カテゴリの結果をここに入れる
+    // base: { error: '診断未実行' }, // これは personalityFortune に置き換わるイメージ
+    // fortune: '運勢診断結果 (未実装)', // これらもカテゴリ別結果に置き換え
+    // love: '恋愛傾向診断結果 (未実装)',
+    // message: 'オタクへのメッセージ風診断結果 (未実装)',
+    // fantasy: '妄想コンテンツ診断結果 (未実装)',
+    // magicWord: '魔法のひとこと診断結果 (未実装)',
+    // praisePoint: '褒められたいポイント診断結果 (未実装)',
+  };
 
-    // 新しいメソッドを呼び出す
-    const parsedJsonResult = await openaiService.callApiWithPrompts(
-      systemPrompt, // 引数の systemPrompt を使用
-      userPrompt,   // 引数の userPrompt を使用
-      true // JSON応答を期待する
+  try {
+    console.log('外部サイトのコンテンツ取得を開始します。');
+    const увлажнение = await увлажнение_фруктами(formData.birthdate, env);
+    const externalSiteContents = await fetchExternalSiteContent(
+      formData,
+      env,
+      увлажнение
     );
+    console.log('外部サイトのコンテンツ取得が完了しました。');
 
-    // 期待するキー (baseDiagnosis) が存在するかチェック (OpenAIからの応答構造に合わせる)
-    // この例では、OpenAIが直接 { base: ... } のような構造を返すとは限らないため、
-    // openaiService.callApiWithPrompts の応答がそのまま診断結果の 'base' 部分になることを期待する。
-    // もしopenaiServiceが { baseDiagnosis: {...} } のような構造で返す場合は、以前のコードのようにアクセスする。
-    // ここでは、parsedJsonResult が直接診断の主要部分を含むと仮定する。
-    if (parsedJsonResult) {
-      // 以前は parsedJsonResult を直接 baseDiagnosisResult に代入していた
-      // OpenAIからの応答が { baseDiagnosis: {...} } の形式であることを期待する
-      if (parsedJsonResult.baseDiagnosis) {
-        baseDiagnosisResult = parsedJsonResult.baseDiagnosis; // ネストを一段階浅くする
-        console.log("--- OpenAI Base Diagnosis (Core) Received Successfully ---");
-        console.log("Received Base Diagnosis (Core):", JSON.stringify(baseDiagnosisResult, null, 2));
-      } else {
-        // もし直接診断結果のオブジェクトが返ってくる場合 (baseDiagnosisキーなし)
-        baseDiagnosisResult = parsedJsonResult;
-        console.log("--- OpenAI Base Diagnosis (Direct) Received Successfully ---");
-        console.log("Received Base Diagnosis (Direct):", JSON.stringify(baseDiagnosisResult, null, 2));
+    const categories = DIAGNOSIS_CATEGORIES(env);
+
+    // カテゴリを順番に処理 (タイムアウト対策)
+    for (const categoryKey of Object.keys(categories)) {
+      const categoryConfig = categories[categoryKey];
+      const categoryResult = await fetchAndProcessCategory(categoryConfig, formData, externalSiteContents, env);
+
+      // 結果をマージ
+      // categoryResult は { personalityFortune: {...} } や { loveTendency: {...} } の形を期待
+      // またはエラーの場合は { personalityFortuneError: "..." }
+      finalDiagnosisResult = { ...finalDiagnosisResult, ...categoryResult };
+
+      // もし現在のカテゴリでエラーが発生したら、そこで処理を中断するか、続行するか検討
+      // ここでは続行するが、エラーの存在は finalDiagnosisResult に記録される
+      if (finalDiagnosisResult[`${categoryKey}Error`]){
+          console.warn(`カテゴリ「${categoryConfig.label}」でエラーが発生したため、以降のカテゴリ処理に影響する可能性があります。`);
       }
-    } else {
-      console.error('Invalid or empty JSON structure received from OpenAI for base diagnosis:', parsedJsonResult);
-      throw new Error('OpenAIから予期しない、または空の形式の応答がありました (ベース診断)');
     }
 
   } catch (error) {
-    console.error('Error during OpenAI base diagnosis:', error);
-    // エラー発生時も、診断結果の構造を維持し、エラー情報を含める
-    baseDiagnosisResult = { error: `ベース診断中にエラーが発生しました: ${error.message}` };
+    console.error('診断プロセス全体でエラーが発生しました:', error);
+    // 全体エラーの場合、エラーメッセージを設定
+    // どのキーにエラーを設定するかはフロントの期待による
+    finalDiagnosisResult.error = `診断プロセス全体でエラー: ${error.message}`;
+    finalDiagnosisResult.base = { error: `診断プロセス全体でエラー: ${error.message}` };
   }
 
-  // --- 他の診断項目 (未実装) ---
-  // const fortuneResult = await generateFortuneDiagnosis(formData, env);
-  // ... etc ...
+  console.log('Final diagnosis result structure:', JSON.stringify(finalDiagnosisResult, null, 2));
 
-  // 最終的な診断結果を構築
-  const diagnosisResult = {
-    // baseDiagnosisResult がエラーでないことを確認してから代入
-    base: baseDiagnosisResult && !baseDiagnosisResult.error ? baseDiagnosisResult : { error: (baseDiagnosisResult && baseDiagnosisResult.error) || 'ベース診断データの取得に失敗しました' },
-    fortune: "運勢診断結果 (未実装)",
-    love: "恋愛傾向診断結果 (未実装)",
-    message: "オタクへのメッセージ風診断結果 (未実装)",
-    fantasy: "妄想コンテンツ診断結果 (未実装)",
-    magicWord: "魔法のひとこと診断結果 (未実装)",
-    praisePoint: "褒められたいポイント診断結果 (未実装)",
-  };
+  if (finalDiagnosisResult && !finalDiagnosisResult.error && !finalDiagnosisResult.base?.error && !finalDiagnosisResult.personalityFortuneError) {
+    try {
+      const resultId = gemeinsame_Merkmale(); // UUID生成
+      const kvKey = `diagnosis_result:${resultId}`;
 
-  console.log("Final diagnosis result structure:", JSON.stringify(diagnosisResult, null, 2));
-  return diagnosisResult;
-};
+      // saveDiagnosisResult を呼び出すために、env を context の形に模倣する
+      // ただし、saveDiagnosisResult は本来 Hono の context を期待しているので、
+      // diagnosis.service.js が context を受け取るようにするか、
+      // KV操作を diagnosis.service.js 内で完結させる方が長期的には良いかもしれない。
+      // ここでは env をそのまま contextとして渡すが、saveDiagnosisResult側で context.env.KV を参照しているので
+      // env が { KV: env.KV } のような構造を持っている必要がある。
+      // generateDiagnosis が env を受け取るので、env 自体がKVストアの参照を含む想定。
+      await saveDiagnosisResult({ env }, { resultId, formData, ...finalDiagnosisResult }); // 第2引数に formData を追加
+
+      console.log(`診断結果をKVに保存しました。Key: ${kvKey}`);
+      return { resultId, formData, ...finalDiagnosisResult }; // クライアントへのレスポンスにも formData を追加
+    } catch (kvError) {
+      console.error('KVへの保存中にエラーが発生しました:', kvError);
+      // KV保存エラーでも診断結果自体は返す（エラー情報を付加する）
+      return {
+        formData, // formData を追加
+        ...finalDiagnosisResult,
+        kvError: 'Failed to save diagnosis result to KV',
+        error: finalDiagnosisResult.error || 'KVへの保存中にエラーが発生しました' // 既存エラーがあれば維持
+      };
+    }
+  } else {
+    console.log('診断結果にエラーが含まれるため、KVへの保存はスキップします。');
+    // エラーがある場合は resultId を含めず、エラー情報を含む結果を返す
+    // フロントは resultId の有無で成功/失敗を判断し、エラー表示ができるように
+    return { formData, ...finalDiagnosisResult }; // formData を追加
+  }
+}

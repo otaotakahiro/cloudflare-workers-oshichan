@@ -12,18 +12,23 @@ const KV_PREFIX = 'diagnosis_result:';
  */
 export async function saveDiagnosisResult(context, data) {
   if (!context || !context.env || !context.env.KV) {
-    console.error('KV binding is not available in the context.');
+    console.error('[KV Service] KV binding is not available in the context for save.');
     throw new Error('KV binding is not configured.');
   }
-  const id = uuidv4();
+  // data オブジェクトに resultId が含まれている前提で、それを使用する
+  // もし data.resultId がなければ、新たに生成する（現在の diagnosis.service.js の使い方では data.resultId が渡される想定）
+  const id = data.resultId || uuidv4();
   const key = `${KV_PREFIX}${id}`;
+  const dataToStore = JSON.stringify(data);
+  console.log(`[KV Service] Attempting to save data to KV. Key: ${key}, Data size: ${dataToStore.length} bytes.`);
+  // console.log(`[KV Service] Data to store (first 500 chars): ${dataToStore.substring(0, 500)}`); // デバッグ用にデータ内容もログ出力
+
   try {
-    // Cloudflare KV に JSON 文字列として保存
-    await context.env.KV.put(key, JSON.stringify(data));
-    console.log(`診断結果をKVに保存しました。Key: ${key}`);
-    return id; // キーではなくID部分だけを返す方が一般的かもしれません
+    await context.env.KV.put(key, dataToStore);
+    console.log(`[KV Service] Successfully saved data to KV. Key: ${key}`);
+    return id;
   } catch (error) {
-    console.error(`KVへの保存中にエラーが発生しました (ID: ${id}):`, error);
+    console.error(`[KV Service] Error saving data to KV. Key: ${key}, Error:`, error);
     throw new Error(`KVへの保存に失敗しました: ${error.message}`);
   }
 }
@@ -36,20 +41,34 @@ export async function saveDiagnosisResult(context, data) {
  */
 export async function getDiagnosisResult(context, id) {
   if (!context || !context.env || !context.env.KV) {
-    console.error('KV binding is not available in the context.');
-    return null; // またはエラーをスロー
+    console.error('[KV Service] KV binding is not available in the context for get.');
+    return null;
   }
   const key = `${KV_PREFIX}${id}`;
+  console.log(`[KV Service] Attempting to get data from KV. Key: ${key}`);
   try {
-    const value = await context.env.KV.get(key, { type: 'json' }); // type: 'json' を指定して自動パース
+    const value = await context.env.KV.get(key, { type: 'text' }); // まずは text で取得
+
     if (value === null) {
-      console.log(`KVからキーが見つかりませんでした: ${key}`);
+      console.log(`[KV Service] Key not found in KV: ${key}`);
       return null;
     }
-    console.log(`KVから診断結果を取得しました。Key: ${key}`);
-    return value;
+    console.log(`[KV Service] Successfully retrieved data from KV. Key: ${key}, Data size: ${value.length} bytes.`);
+    // console.log(`[KV Service] Retrieved data (first 500 chars): ${value.substring(0, 500)}`);
+
+    // 手動でJSONパースし、エラーがあればログに出す
+    try {
+      const parsedValue = JSON.parse(value);
+      console.log(`[KV Service] Successfully parsed JSON data for key: ${key}`);
+      return parsedValue;
+    } catch (parseError) {
+      console.error(`[KV Service] Error parsing JSON data from KV. Key: ${key}, Error:`, parseError);
+      console.error(`[KV Service] Raw data from KV (first 500 chars): ${value.substring(0,500)}`);
+      return { error: 'Failed to parse diagnosis result from KV.', details: parseError.message };
+    }
+
   } catch (error) {
-    console.error(`KVからの取得中にエラーが発生しました (Key: ${key}):`, error);
-    return null; // またはエラーをスロー
+    console.error(`[KV Service] Error getting data from KV. Key: ${key}, Error:`, error);
+    return null;
   }
 }

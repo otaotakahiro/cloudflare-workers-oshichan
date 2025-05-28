@@ -6,40 +6,68 @@
     <title>私の推しちゃん診断結果</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@300;400;500;700&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
     <link href="/styles/main.css" rel="stylesheet" />
     <link href="/styles/tabs-style.css" rel="stylesheet" />
+    <style>
+      :root {
+        --main-bg-color: #f8f5fa; /* 淡い白色の背景 */
+        --main-text-color: #333333;
+        --accent-color: #9370DB;
+        --light-accent: #b19cd9;
+        --form-bg-color: rgba(255, 255, 255, 0.85);
+        --form-border: rgba(147, 112, 219, 0.5);
+      }
+
+      body {
+        font-family: 'Zen Maru Gothic', sans-serif;
+        background-color: var(--main-bg-color);
+        color: var(--main-text-color);
+        margin: 0;
+        padding: 0;
+        overflow-x: hidden;
+        position: relative;
+        min-height: 100vh;
+      }
+
+      #particles-js {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 0;
+      }
+    </style>
   </head>
 
   <body>
-    <div class="container mx-auto px-4 py-5 max-w-7xl">
+    <div id="particles-js"></div>
+    <div class="container mx-auto max-w-7xl" style="position: relative; z-index: 2; background-color: transparent; box-shadow: none;">
       <!-- ヘッダー部分 -->
-      <div class="header-section mb-0 text-center sticky top-0 z-50 bg-white shadow-md w-full py-3 flex flex-col items-center">
-        <h1 class="text-lg sm:text-xl font-bold mb-1" id="person-name">あなたの推し <span id="oshi-name-placeholder"></span> の診断結果</h1>
-        <div class="profile-info grid grid-cols-2 gap-x-2 gap-y-0 text-xs sm:text-sm leading-tight mb-2">
-          <div class="info-item text-center">氏名: <span id="full-name">-</span></div>
-          <div class="info-item text-center">性別: <span id="gender">-</span></div>
-          <div class="info-item text-center">生年月日: <span id="birth-date">-</span></div>
-          <div class="info-item text-center">分析日: <span id="analysis-date">-</span></div>
+      <div class="header-section mb-0 text-center sticky top-0 z-50 w-full py-3 flex flex-col items-center" style="background-color: var(--main-bg-color);">
+        <div id="page-title-container" class="text-lg sm:text-xl font-bold mb-1 flex flex-col items-center" style="color: var(--accent-color);">
+          <span id="title-line-1" style="text-shadow: 0 0 5px rgba(147, 112, 219, 0.3);">アナタの推し</span>
+          <span id="title-line-2" class="text-2xl sm:text-3xl my-1"><span id="oshi-name-placeholder-main">クォン ジヨン</span>様</span>
+          <span id="title-line-3" style="text-shadow: 0 0 5px rgba(147, 112, 219, 0.3);">診断結果</span>
         </div>
-        <div class="inline-flex flex-col sm:flex-row w-full justify-center border-t">
+        <div class="profile-info grid grid-cols-2 gap-x-2 gap-y-0 text-xs sm:text-sm leading-tight mb-2" style="color: var(--main-text-color);">
+          <div class="info-item text-center rounded px-2 py-0.5" style="background-color: rgba(255, 255, 255, 0.8);">氏名: <span id="full-name">-</span></div>
+          <div class="info-item text-center rounded px-2 py-0.5" style="background-color: rgba(255, 255, 255, 0.8);">性別: <span id="gender">-</span></div>
+          <div class="info-item text-center rounded px-2 py-0.5" style="background-color: rgba(255, 255, 255, 0.8);">生年月日: <span id="birth-date">1988年8月18日</span></div>
+          <div class="info-item text-center rounded px-2 py-0.5" style="background-color: rgba(255, 255, 255, 0.8);">分析日: <span id="analysis-date">2025年5月28日</span></div>
+        </div>
+        <div class="inline-flex flex-col sm:flex-row w-full justify-center border-t" style="border-top-color: var(--light-accent);">
           <!-- タブボタン (adjusted borders for header context) -->
-          <button id="personality-fortune-tab" class="tab-button active py-1.5 px-4 text-center font-medium text-sm border-b-2 border-blue-500 mb-px sm:mb-0 sm:py-2">
+          <button id="personality-fortune-tab" class="tab-button py-1.5 px-4 text-center font-medium text-sm border-b-2 mb-px sm:mb-0 sm:py-2 active" style="border-color: var(--accent-color); color: var(--accent-color);">
             <i class="fas fa-heartbeat mr-1"></i>性格・運勢
           </button>
-          <button id="love-tendency-tab" class="tab-button py-1.5 px-4 text-center font-medium text-sm text-gray-500 hover:text-gray-700 border-b-2 border-transparent hover:border-gray-300 mb-px sm:mb-0 sm:py-2">
+          <button id="love-tendency-tab" class="tab-button py-1.5 px-4 text-center font-medium text-sm border-b-2 border-transparent mb-px sm:mb-0 sm:py-2" style="color: var(--main-text-color); transition: color 0.3s, border-color 0.3s;" onmouseover="this.style.borderColor='var(--light-accent)'; this.style.color='var(--accent-color)';" onmouseout="if (!this.classList.contains('active')) { this.style.borderColor='transparent'; this.style.color='var(--main-text-color)';}">
             <i class="fas fa-grin-hearts mr-1"></i>恋愛傾向
           </button>
-          <button id="fantasy-content-tab" class="tab-button py-1.5 px-4 text-center font-medium text-sm text-gray-500 hover:text-gray-700 border-b-2 border-transparent hover:border-gray-300 mb-px sm:mb-0 sm:py-2">
+          <button id="fantasy-content-tab" class="tab-button py-1.5 px-4 text-center font-medium text-sm border-b-2 border-transparent mb-px sm:mb-0 sm:py-2" style="color: var(--main-text-color); transition: color 0.3s, border-color 0.3s;" onmouseover="this.style.borderColor='var(--light-accent)'; this.style.color='var(--accent-color)';" onmouseout="if (!this.classList.contains('active')) { this.style.borderColor='transparent'; this.style.color='var(--main-text-color)';}">
             <i class="fas fa-theater-masks mr-1"></i>妄想コンテンツ
-          </button>
-          <button id="career-tab" class="tab-button py-1.5 px-4 text-center font-medium text-sm text-gray-500 hover:text-gray-700 border-b-2 border-transparent hover:border-gray-300 mb-px sm:mb-0 sm:py-2" style="display: none;">
-            <i class="fas fa-briefcase mr-1"></i>キャリア適性
-          </button>
-          <button id="future-tab" class="tab-button py-1.5 px-4 text-center font-medium text-sm text-gray-500 hover:text-gray-700 border-b-2 border-transparent hover:border-gray-300 mb-px sm:mb-0 sm:py-2" style="display: none;">
-            <i class="fas fa-road mr-1"></i>未来予測
-          </button>
-          <button id="plus-tab" class="tab-button py-1.5 px-4 text-center font-medium text-sm text-gray-500 hover:text-gray-700 border-b-2 border-transparent hover:border-gray-300 mb-px sm:mb-0 sm:py-2" style="display: none;">
-            <i class="fas fa-plus-circle mr-1"></i>プラスオン
           </button>
         </div>
       </div>
@@ -59,53 +87,276 @@
       <div class="tab-content-container" style="padding: 0;">
         <!-- 性格・運勢タブの内容 -->
         <div class="tab-content active" id="personality-fortune-content">
-          <div class="p-4"> (性格・運勢タブの内容はここに表示されます) </div>
+          <div class="p-4 space-y-6">
+
+            <!-- 推しの表の顔・裏の顔 -->
+            <div class="grid md:grid-cols-2 gap-6">
+              <div class="p-4 rounded-lg border border-pink-300 bg-white">
+                <h3 class="text-lg font-semibold mb-2 text-pink-500 flex items-center">
+                  <i class="fas fa-sun mr-2"></i>推しの表の顔
+                </h3>
+                <p id="public-persona" class="text-gray-700 text-sm leading-relaxed bg-white p-2 rounded">ジヨンの表の顔は、まるで誰もが憧れるヒーローのように輝いているよね。ステージに立つときのあの堂々とした佇まい、ファンに向ける優しい笑顔、時に見せるクールな表情。彼の言葉は力強くて、時にはユーモアも交えながら、ファンを自然と引き込む魔法があるんだ。きっと、彼のその自信と誠実さが、みんなの心をぎゅっと掴んで離さないんだろうなと思うよ。ファンの前ではいつも全力で、でも完璧すぎない人間味も感じられるところが憧れポイントかも？</p>
+              </div>
+              <div class="p-4 rounded-lg border border-indigo-300 bg-white">
+                <h3 class="text-lg font-semibold mb-2 text-indigo-500 flex items-center">
+                  <i class="fas fa-moon mr-2"></i>推しの裏の顔
+                </h3>
+                <p id="private-persona" class="text-gray-700 text-sm leading-relaxed bg-white p-2 rounded">プライベートのジヨンは、意外と肩の力が抜けていて、すごく親しみやすい存在かもしれないね。仲間や親しい人といるときは、気さくで少し天然なところもあるみたい。完璧に見えても、ちょっと不器用なところや自分の弱さを素直に見せることもあるんじゃないかな。そんなギャップが、ファンとしてはつい守ってあげたくなる魅力になっている気がするよ。たまに見せる無防備な笑顔や、リラックスした仕草は、彼の人間らしい素顔を感じさせてくれるんだ。</p>
+              </div>
+            </div>
+
+            <!-- メンタルの強さ -->
+            <div class="p-4 rounded-lg border border-purple-300 bg-white">
+              <h3 class="text-lg font-semibold mb-3 text-purple-600 flex items-center">
+                <i class="fas fa-brain mr-2"></i>メンタルの強さ
+              </h3>
+              <div id="mental-strength-text" class="text-gray-700 text-sm mb-2 leading-relaxed bg-white p-2 rounded">（ここにメンタルの強さに関するテキストが表示されます）</div>
+              <div class="flex items-center justify-between text-sm mt-3 mb-1 px-1">
+                <span class="text-red-500 font-medium">弱い</span>
+                <span class="text-blue-500 font-medium">強い</span>
+              </div>
+              <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 mb-2">
+                <div id="mental-strength-bar" class="bg-gradient-to-r from-red-400 via-yellow-400 to-blue-500 h-2.5 rounded-full" style="width: 50%"></div>
+              </div>
+              <p class="text-xs text-gray-500 italic mt-2">→これによって、ファンがどう寄り添うべきかのヒントにもなる</p>
+            </div>
+
+            <!-- 人付き合いのスタンス -->
+            <div class="p-4 rounded-lg border border-green-300 bg-white">
+              <h3 class="text-lg font-semibold mb-2 text-green-600 flex items-center">
+                <i class="fas fa-users mr-2"></i>人付き合いのスタンス
+              </h3>
+              <p id="social-stance" class="text-gray-700 text-sm leading-relaxed bg-white p-2 rounded">（ここに人付き合いのスタンスに関するテキストが表示されます）</p>
+              <p class="text-xs text-gray-500 italic mt-2">→SNSやバラエティでの振る舞いにもリンクしてくると面白い</p>
+            </div>
+
+            <!-- 人生で大切にしていることTOP3 -->
+            <div class="p-4 rounded-lg border border-yellow-300 bg-white">
+              <h3 class="text-lg font-semibold mb-3 text-yellow-500 flex items-center">
+                <i class="fas fa-gem mr-2"></i>人生で大切にしていることTOP3
+              </h3>
+              <ol class="list-none space-y-2 bg-white p-3 rounded">
+                <li class="text-gray-700 text-sm"><span class="font-semibold text-yellow-600 mr-2">1位:</span><span id="important-thing-1">（ここに1位が表示されます）</span></li>
+                <li class="text-gray-700 text-sm"><span class="font-semibold text-yellow-600 mr-2">2位:</span><span id="important-thing-2">（ここに2位が表示されます）</span></li>
+                <li class="text-gray-700 text-sm"><span class="font-semibold text-yellow-600 mr-2">3位:</span><span id="important-thing-3">（ここに3位が表示されます）</span></li>
+              </ol>
+            </div>
+
+            <!-- 今の運気 -->
+            <div class="p-4 rounded-lg border border-teal-300 bg-white">
+              <h3 class="text-lg font-semibold mb-2 text-teal-500 flex items-center">
+                <i class="fas fa-chart-line mr-2"></i>今の運気
+              </h3>
+              <div class="bg-white p-3 rounded">
+                <p class="text-gray-700 text-sm mb-1">今の推しは「<span id="current-fortune-period" class="font-semibold">（〇〇期）</span>」</p>
+                <p id="current-fortune-text" class="text-gray-700 text-sm leading-relaxed">（ここに今の運気に関する詳細テキストが表示されます）</p>
+              </div>
+            </div>
+
+            <!-- 今後の転機 -->
+            <div class="p-4 rounded-lg border border-cyan-300 bg-white">
+              <h3 class="text-lg font-semibold mb-2 text-cyan-500 flex items-center">
+                <i class="fas fa-rocket mr-2"></i>今後の転機
+              </h3>
+              <div class="bg-white p-3 rounded">
+                <p class="text-gray-700 text-sm mb-1">次に化けるタイミングは「<span id="future-turning-point-period" class="font-semibold">（〇〇期）</span>」</p>
+                <p id="future-turning-point-text" class="text-gray-700 text-sm mb-3 leading-relaxed">（ここに今後の転機に関する詳細テキストが表示されます）</p>
+                <h4 class="text-sm font-semibold text-gray-600 mb-1">成長のためのポイント：</h4>
+                <ul id="growth-points-list" class="list-disc list-inside text-gray-700 text-sm space-y-1 pl-2">
+                  <li>（ここに成長ポイント1が表示されます）</li>
+                  <li>（ここに成長ポイント2が表示されます）</li>
+                  <li>（ここに成長ポイント3が表示されます）</li>
+                </ul>
+              </div>
+            </div>
+
+          </div>
         </div>
 
         <!-- 恋愛傾向タブの内容 -->
         <div class="tab-content" id="love-tendency-content">
-           <div class="p-4"> (恋愛傾向タブの内容はここに表示されます) </div>
+          <div class="p-4 space-y-6">
+
+            <!-- 恋愛傾向を一言で -->
+            <div class="p-4 rounded-lg text-center border border-pink-400 bg-white">
+              <h3 class="text-xl font-semibold mb-2 text-pink-600">
+                <i class="fas fa-heart-circle-check mr-2"></i><span id="love-tendency-summary">（ここに恋愛傾向を一言で）</span>
+              </h3>
+              <p id="love-tendency-summary-detail" class="text-gray-600 text-sm bg-white p-2 rounded">（好き避けだけど、想いを伝えるのは苦手 など）</p>
+            </div>
+
+            <!-- 片思いモード / ガチ恋モード -->
+            <div class="grid md:grid-cols-2 gap-6">
+              <div class="p-4 rounded-lg border border-rose-300 bg-white">
+                <h4 class="text-md font-semibold mb-2 text-rose-500 flex items-center">
+                  <i class="far fa-heart mr-2"></i>片思いモードのときは・・・
+                </h4>
+                <ul id="one-sided-love-mode" class="list-disc list-inside text-gray-700 text-sm space-y-1 pl-2 leading-relaxed bg-white p-3 rounded">
+                  <li>（片思いモードの行動1）</li>
+                  <li>（片思いモードの行動2）</li>
+                </ul>
+              </div>
+              <div class="p-4 rounded-lg border border-red-300 bg-white">
+                <h4 class="text-md font-semibold mb-2 text-red-600 flex items-center">
+                  <i class="fas fa-heart-pulse mr-2"></i>ガチ恋モードのときは・・・
+                </h4>
+                <ul id="serious-love-mode" class="list-disc list-inside text-gray-700 text-sm space-y-1 pl-2 leading-relaxed bg-white p-3 rounded">
+                  <li>（ガチ恋モードの行動1）</li>
+                  <li>（ガチ恋モードの行動2）</li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- 理想のタイプ -->
+            <div class="p-4 rounded-lg border border-purple-300 bg-white">
+              <h3 class="text-lg font-semibold mb-3 text-purple-600 flex items-center">
+                <i class="fas fa-user-check mr-2"></i>理想のタイプ
+              </h3>
+              <div class="bg-white p-3 rounded">
+                <div id="ideal-type-tags" class="flex flex-wrap gap-2 mb-3">
+                  <span class="bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs font-medium">#明るい</span>
+                  <span class="bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs font-medium">#家庭的</span>
+                  <span class="bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs font-medium">#清潔感がある</span>
+                </div>
+                <p id="ideal-type-text" class="text-gray-700 text-sm leading-relaxed">（ここに理想のタイプに関する詳細テキストが表示されます）</p>
+              </div>
+            </div>
+
+            <!-- 結婚願望 -->
+            <div class="p-4 rounded-lg border border-pink-300 bg-white">
+              <h3 class="text-lg font-semibold mb-3 text-pink-500 flex items-center">
+                <i class="fas fa-ring mr-2"></i>結婚願望
+              </h3>
+              <div class="bg-white p-3 rounded">
+                <div class="flex items-center justify-between text-sm mt-1 mb-1 px-1">
+                  <span class="text-gray-500 font-medium">薄い</span>
+                  <span class="text-red-500 font-medium">強い</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 mb-3">
+                  <div id="marriage-desire-bar" class="bg-gradient-to-r from-gray-400 to-red-500 h-2.5 rounded-full" style="width: 50%"></div>
+                </div>
+                <h4 class="text-sm font-semibold text-gray-600 mb-1">理想の家庭像は・・・</h4>
+                <ul id="ideal-family-image" class="list-disc list-inside text-gray-700 text-sm space-y-1 pl-2 leading-relaxed">
+                  <li>（理想の家庭像1）</li>
+                  <li>（理想の家庭像2）</li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- 推しが喜ぶ魔法の一言 -->
+            <div class="p-4 rounded-lg border border-amber-300 bg-white">
+              <h3 class="text-lg font-semibold mb-3 text-amber-500 flex items-center">
+                <i class="fas fa-wand-magic-sparkles mr-2"></i>推しが喜ぶ魔法の一言
+              </h3>
+              <div class="space-y-3 bg-white p-3 rounded">
+                <div>
+                  <p class="font-semibold text-gray-800"><span class="text-amber-600 mr-1">1位:</span><span id="magic-word-1-phrase">（魔法の一言1）</span></p>
+                  <p id="magic-word-1-detail" class="text-xs text-gray-600 pl-6 leading-relaxed">（詳細）</p>
+                </div>
+                <div>
+                  <p class="font-semibold text-gray-800"><span class="text-amber-600 mr-1">2位:</span><span id="magic-word-2-phrase">（魔法の一言2）</span></p>
+                  <p id="magic-word-2-detail" class="text-xs text-gray-600 pl-6 leading-relaxed">（詳細）</p>
+                </div>
+                <div>
+                  <p class="font-semibold text-gray-800"><span class="text-amber-600 mr-1">3位:</span><span id="magic-word-3-phrase">（魔法の一言3）</span></p>
+                  <p id="magic-word-3-detail" class="text-xs text-gray-600 pl-6 leading-relaxed">（詳細）</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- 褒めて欲しいポイント -->
+            <div class="p-4 rounded-lg border border-lime-300 bg-white">
+              <h3 class="text-lg font-semibold mb-2 text-lime-600 flex items-center">
+                <i class="fas fa-award mr-2"></i>褒めて欲しいポイント
+              </h3>
+              <div class="bg-white p-3 rounded">
+                <p class="text-gray-700 text-sm leading-relaxed mb-1">実は・・・ <strong id="praise-point-core" class="text-lime-700">（〇〇を一番褒めて欲しい）</strong> と思っている！</p>
+                <p id="praise-point-detail" class="text-gray-700 text-sm leading-relaxed">（ここに褒めて欲しいポイントの詳細テキストが表示されます）</p>
+              </div>
+            </div>
+
+            <!-- NG声かけワード -->
+            <div class="p-4 rounded-lg border border-slate-300 bg-white">
+              <h3 class="text-lg font-semibold mb-2 text-slate-600 flex items-center">
+                <i class="fas fa-comment-slash mr-2"></i>NG声かけワード
+              </h3>
+              <div class="bg-white p-3 rounded">
+                <div id="ng-words-list" class="flex flex-wrap gap-2 mb-2">
+                  <span class="bg-slate-100 text-slate-700 px-2 py-1 rounded-full text-xs font-medium">「天才すぎ」</span>
+                  <span class="bg-slate-100 text-slate-700 px-2 py-1 rounded-full text-xs font-medium">「余裕そう」</span>
+                </div>
+                <p id="ng-words-detail" class="text-gray-700 text-sm leading-relaxed">（ここにNG声かけワードの詳細な理由やその他のワードが表示されます）</p>
+              </div>
+            </div>
+
+          </div>
         </div>
 
         <!-- 妄想コンテンツタブの内容 -->
         <div class="tab-content" id="fantasy-content-content">
-           <div class="p-4"> (妄想コンテンツタブの内容はここに表示されます) </div>
-        </div>
+          <div class="p-4 space-y-6">
 
-        <!-- キャリア適性タブの内容 (非表示) -->
-        <div class="tab-content" id="career-content" style="display: none;">
-          <!-- 内容は現状のまま or 削除しても良い -->
-        </div>
+            <!-- もしも推しが一般人だったら -->
+            <div class="p-4 rounded-lg border border-sky-400 bg-white">
+              <h3 class="text-lg font-semibold mb-3 text-sky-600 flex items-center">
+                <i class="fas fa-user-tie mr-2"></i>もしも推しが一般人だったら・・・
+              </h3>
+              <div class="bg-white p-3 rounded">
+                <div class="grid sm:grid-cols-2 gap-x-4 gap-y-2 mb-2 text-sm">
+                  <p><strong>職業:</strong> <span id="if-ordinary-occupation">（職業）</span></p>
+                  <p><strong>趣味:</strong> <span id="if-ordinary-hobby">（趣味）</span></p>
+                </div>
+                <p id="if-ordinary-text" class="text-gray-700 text-sm leading-relaxed">（ここに「もしも推しが一般人だったら」の詳細テキストが表示されます）</p>
+              </div>
+            </div>
 
-        <!-- 未来予測タブの内容 (非表示) -->
-        <div class="tab-content" id="future-content" style="display: none;">
-          <!-- 内容は現状のまま or 削除しても良い -->
-        </div>
+            <!-- もしも推しがペットだったら -->
+            <div class="p-4 rounded-lg border border-orange-400 bg-white">
+              <h3 class="text-lg font-semibold mb-3 text-orange-600 flex items-center">
+                <i class="fas fa-paw mr-2"></i>もしも推しがペットだったら・・・
+              </h3>
+              <div class="bg-white p-3 rounded">
+                <div class="grid sm:grid-cols-2 gap-x-4 gap-y-2 mb-2 text-sm">
+                  <p><strong>種類:</strong> <span id="if-pet-type">（種類：犬、うさぎ など）</span></p>
+                  <p><strong>性格:</strong> <span id="if-pet-personality">（性格）</span></p>
+                </div>
+                <p id="if-pet-text" class="text-gray-700 text-sm leading-relaxed">（ここに「もしも推しがペットだったら」の詳細テキストが表示されます）</p>
+              </div>
+            </div>
 
-        <!-- プラスオンタブの内容 (非表示) -->
-        <div class="tab-content" id="plus-content" style="display: none;">
-          <!-- 内容は現状のまま or 削除しても良い -->
+            <!-- 密着！推しの1日の過ごし方 -->
+            <div class="p-4 rounded-lg border border-gray-400 bg-white">
+              <h3 class="text-lg font-semibold mb-3 text-gray-700 flex items-center">
+                <i class="fas fa-clock mr-2"></i>密着！推しの1日の過ごし方
+              </h3>
+              <div class="space-y-3 bg-white p-3 rounded">
+                <div>
+                  <h4 class="font-semibold text-gray-600 flex items-center"><i class="fas fa-sun mr-2 text-yellow-400"></i>朝</h4>
+                  <p id="day-in-life-morning" class="text-gray-700 text-sm pl-6 leading-relaxed">（朝の過ごし方）</p>
+                </div>
+                <div>
+                  <h4 class="font-semibold text-gray-600 flex items-center"><i class="fas fa-cloud-sun mr-2 text-orange-400"></i>昼</h4>
+                  <p id="day-in-life-afternoon" class="text-gray-700 text-sm pl-6 leading-relaxed">（昼の過ごし方）</p>
+                </div>
+                <div>
+                  <h4 class="font-semibold text-gray-600 flex items-center"><i class="fas fa-moon mr-2 text-indigo-400"></i>夜</h4>
+                  <p id="day-in-life-night" class="text-gray-700 text-sm pl-6 leading-relaxed">（夜の過ごし方）</p>
+                </div>
+              </div>
+            </div>
+
+          </div>
         </div>
       </div>
     </div>
 
     <!-- フッター -->
-    <div class="footer mt-8 px-4">
-      <div class="container mx-auto max-w-7xl">
-        <div class="flex flex-col mb-4 border-t pt-4">
-          <div class="flex justify-between w-full mb-6">
-            <a href="/index.html" class="text-sm text-blue-500 hover:text-blue-700 hover:underline transition-colors duration-200">
-              <!-- ＜＜フォームに戻る -->
-            </a>
-          </div>
-          <div class="text-center text-gray-500">
-            <p>© 2025 私の推しちゃん診断（仮）</p>
-            <p class="text-xs mt-1">この診断はあなたの推しへの愛を深めるエンターテイメントです</p>
-          </div>
-        </div>
-      </div>
+    <div class="footer mt-8 px-4 text-center py-8 text-sm" style="background-color: var(--main-bg-color); color: var(--main-text-color); z-index: 2; position: relative;">
+      <p class="mb-2">この診断はあなたの推しへのアイを深めるエンターテイメントです</p>
+      <p id="footer-text">&copy; <span id="footer-year"></span> TeN Co., Ltd. All Rights Reserved.</p>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
     <!-- 各タブのスクリプトを明示的に読み込み -->
     <script type="module" src="/scripts/tabs-personality-fortune.js"></script>
     <script type="module" src="/scripts/tabs-love-tendency.js"></script>
@@ -116,6 +367,32 @@
       // エラーハンドリング
       window.addEventListener('error', function(event) {
         console.error('Script error:', event);
+      });
+
+      // particlesJSの初期化
+      particlesJS("particles-js", {
+        particles: {
+            number: { value: 50, density: { enable: true, value_area: 800 } },
+            color: { value: "#9370db" },
+            shape: { type: ["circle", "star"], stroke: { width: 0, color: "#000000" } },
+            opacity: { value: 0.3, random: true, anim: { enable: true, speed: 1, opacity_min: 0.1, sync: false } },
+            size: { value: 3, random: true, anim: { enable: true, speed: 2, size_min: 0.1, sync: false } },
+            line_linked: { enable: true, distance: 150, color: "#b19cd9", opacity: 0.2, width: 1 },
+            move: { enable: true, speed: 1, direction: "none", random: true, straight: false, out_mode: "out", bounce: false }
+        },
+        interactivity: {
+            detect_on: "canvas",
+            events: {
+                onhover: { enable: true, mode: "bubble" },
+                onclick: { enable: true, mode: "push" },
+                resize: true
+            },
+            modes: {
+                bubble: { distance: 150, size: 6, duration: 2, opacity: 0.8, speed: 3 },
+                push: { particles_nb: 4 }
+            }
+        },
+        retina_detect: true
       });
     </script>
 

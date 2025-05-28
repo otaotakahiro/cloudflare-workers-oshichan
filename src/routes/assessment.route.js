@@ -10,7 +10,8 @@ import { Hono } from 'hono';
 import { streamSSE } from 'hono/streaming';
 // import { kv } from '@vercel/kv'; // Vercel KV ← 削除
 import { saveDiagnosisResult, getDiagnosisResult } from '../services/kv.service.js';
-import { BASE_DIAGNOSIS_SYSTEM_PROMPT, generateBaseDiagnosisUserPrompt } from '../prompts/base-diagnosis.prompt.js';
+// BASE_DIAGNOSIS_SYSTEM_PROMPT と generateBaseDiagnosisUserPrompt のインポートを削除
+// import { BASE_DIAGNOSIS_SYSTEM_PROMPT, generateBaseDiagnosisUserPrompt } from '../prompts/base-diagnosis.prompt.js';
 // diagnósticoPromptSchema のインポートは一旦コメントアウト (後で解決策を探す)
 // import { diagnósticoPromptSchema } from '../prompts/diagnosis.prompt.schema.js';
 
@@ -94,34 +95,43 @@ export default function (app) {
 
       console.log('外部サイトコンテンツ:', JSON.stringify(externalSiteContents, null, 2));
 
-      const userPrompt = generateBaseDiagnosisUserPrompt(requestBody, externalSiteContents);
+      // userPrompt の生成は diagnosis.service.js 内で行うため、ここでは不要
+      // const userPrompt = generateBaseDiagnosisUserPrompt(requestBody, externalSiteContents);
 
       const diagnosisResult = await generateDiagnosis(
-        BASE_DIAGNOSIS_SYSTEM_PROMPT,
-        userPrompt,
-        requestBody,
-        null,
+        // BASE_DIAGNOSIS_SYSTEM_PROMPT, // 削除
+        // userPrompt, // 削除
+        requestBody, // formData として渡す
+        // null, // schema は元々未使用のため削除
         context.env
       );
       console.log('診断結果生成完了');
 
-      if (!diagnosisResult || !diagnosisResult.base || diagnosisResult.base.error) {
-        const errorMessage = diagnosisResult && diagnosisResult.base && diagnosisResult.base.error
-          ? diagnosisResult.base.error
-          : '診断結果の形式が無効か、ベース診断に失敗しました。';
+      // エラーチェックの修正: diagnosisResult.base.error ではなく、
+      // diagnosisResult.error や diagnosisResult.personalityFortuneError を確認する
+      if (diagnosisResult.error || diagnosisResult.personalityFortuneError) {
+        const errorMessage = diagnosisResult.error || diagnosisResult.personalityFortuneError || '診断結果の生成に失敗しました。';
         console.error(errorMessage, diagnosisResult);
         return context.json({ error: '診断結果の生成に失敗しました', details: errorMessage }, 500);
       }
 
-      const dataToSave = {
-        formData: requestBody,
-        diagnosis: diagnosisResult
-      };
+      // 診断成功時のレスポンス構造も diagnosis.service.js 側で resultId を含めて返すようになったため、
+      // ここでの dataToSave の再構築と saveDiagnosisResult の呼び出しは不要になる可能性がある。
+      // diagnosis.service.js の戻り値をそのまま利用する。
+      // ただし、KV保存が失敗した場合のエラーハンドリングは diagnosis.service.js 側で行われるようになったため、
+      // ここでは diagnosisResult.id の有無で成功を判断し、エラー時はその内容を返す。
 
-      const resultId = await saveDiagnosisResult(context, dataToSave);
-      console.log('診断結果保存完了。Result ID:', resultId);
+      if (!diagnosisResult.resultId) {
+        // diagnosis.service.js 側でエラーがあれば、resultId は付与されない想定
+        const errorMessage = diagnosisResult.error || diagnosisResult.personalityFortuneError || diagnosisResult.kvError || '診断処理中に不明なエラーが発生しました。';
+        console.error('診断処理失敗 (resultIdなし):', errorMessage, diagnosisResult);
+        return context.json({ error: '診断結果の保存または取得に失敗しました', details: errorMessage }, 500);
+      }
 
-      return context.json({ id: resultId, result: dataToSave });
+      console.log('診断結果保存完了。Result ID:', diagnosisResult.resultId);
+
+      // diagnosis.service.js から返される結果をそのままクライアントに返す
+      return context.json(diagnosisResult);
 
     } catch (error) {
       console.error('診断リクエスト処理中にエラーが発生しました:', error);
