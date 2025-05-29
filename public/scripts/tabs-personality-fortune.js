@@ -9,8 +9,10 @@
 export function populatePersonalityFortuneTab(data) {
     console.log('populatePersonalityFortuneTab 実行。データ:', data);
 
-    if (!data) {
-        console.warn('性格・運勢データが提供されませんでした。');
+    const personalityData = data && data.personalityFortune ? data.personalityFortune : null;
+
+    if (!personalityData) {
+        console.warn('性格・運勢データ (personalityFortune) が提供されませんでした。');
         // ここでタブ内にエラーメッセージを表示するなどの処理も可能
         return;
     }
@@ -35,47 +37,57 @@ export function populatePersonalityFortuneTab(data) {
     };
 
     // 推しの表の顔・裏の顔
-    setText('public-persona', data.publicPersona);
-    setText('private-persona', data.privatePersona);
+    setText('public-persona', personalityData.publicPersona);
+    setText('private-persona', personalityData.privatePersona);
 
     // メンタルの強さ
-    if (data.mentalAspects) {
-        setText('mental-strength-text', data.mentalAspects.description); // 仮のキー名
+    if (personalityData.mentalAspects) {
+        setText('mental-strength-text', personalityData.mentalAspects.description);
         const strengthBar = document.getElementById('mental-strength-bar');
-        if (strengthBar && data.mentalAspects.strengthValue) { // strengthValue: 0-100 の数値と仮定
-            strengthBar.style.width = `${data.mentalAspects.strengthValue}%`;
+        if (strengthBar && personalityData.mentalAspects.strengthValue) { // strengthValue: 0-100 の数値と仮定
+            strengthBar.style.width = `${personalityData.mentalAspects.strengthValue}%`;
         } else if (strengthBar) {
             strengthBar.style.width = '50%'; // デフォルト
         }
     }
 
     // 人付き合いのスタンス
-    setText('social-stance', data.socialStance ? data.socialStance.description : ''); // 仮のキー名
+    setText('social-stance', personalityData.socialStance ? personalityData.socialStance.description : '');
 
     // 人生で大切にしていることTOP3
-    if (data.importantThingsInLifeTop3 && Array.isArray(data.importantThingsInLifeTop3)) {
-        setText('important-thing-1', data.importantThingsInLifeTop3[0] ? data.importantThingsInLifeTop3[0].title : '情報なし');
-        setText('important-thing-2', data.importantThingsInLifeTop3[1] ? data.importantThingsInLifeTop3[1].title : '情報なし');
-        setText('important-thing-3', data.importantThingsInLifeTop3[2] ? data.importantThingsInLifeTop3[2].title : '情報なし');
+    if (personalityData.importantThingsInLifeTop3 && Array.isArray(personalityData.importantThingsInLifeTop3)) {
+        setText('important-thing-1', personalityData.importantThingsInLifeTop3[0] ? personalityData.importantThingsInLifeTop3[0].title : '情報なし');
+        setText('important-thing-2', personalityData.importantThingsInLifeTop3[1] ? personalityData.importantThingsInLifeTop3[1].title : '情報なし');
+        setText('important-thing-3', personalityData.importantThingsInLifeTop3[2] ? personalityData.importantThingsInLifeTop3[2].title : '情報なし');
     }
 
     // 今の運気
-    if (data.currentFortune) {
-        setText('current-fortune-period', data.currentFortune.period);
-        setText('current-fortune-text', data.currentFortune.overallText);
+    if (personalityData.currentFortune) {
+        setText('current-fortune-period', personalityData.currentFortune.period);
+        setText('current-fortune-text', personalityData.currentFortune.overallText);
     }
 
-    // 今後の転機
-    if (data.futureTurningPoint) {
-        setText('future-turning-point-period', data.futureTurningPoint.timing);
-        setText('future-turning-point-text', data.futureTurningPoint.description);
+    // 今後の転機 (コメントアウトされているが、もし復活させるなら personalityData を参照)
+    if (personalityData.futureTurningPoint) {
+        setText('future-turning-point-period', personalityData.futureTurningPoint.timing);
+        setText('future-turning-point-text', personalityData.futureTurningPoint.description);
         const growthPointsList = document.getElementById('growth-points-list');
-        if (growthPointsList && data.futureTurningPoint.growthPoints && Array.isArray(data.futureTurningPoint.growthPoints)) {
-            growthPointsList.innerHTML = data.futureTurningPoint.growthPoints.map(point => `<li>${point}</li>`).join('');
+        if (growthPointsList && personalityData.futureTurningPoint.growthPoints && Array.isArray(personalityData.futureTurningPoint.growthPoints)) {
+            growthPointsList.innerHTML = personalityData.futureTurningPoint.growthPoints.map(point => `<li>${point}</li>`).join('');
         } else if (growthPointsList) {
             growthPointsList.innerHTML = '<li>情報なし</li>';
         }
     }
+
+    // livePerformanceHints の表示ロジックをここに追加する必要があるかもしれません。
+    // 例:
+    // const hintsContainer = document.getElementById('live-performance-hints-container');
+    // if (hintsContainer && personalityData.livePerformanceHints && Array.isArray(personalityData.livePerformanceHints)) {
+    //     hintsContainer.innerHTML = personalityData.livePerformanceHints.map(hint => `<div class="hint-item">${hint}</div>`).join('');
+    // } else if (hintsContainer) {
+    //     hintsContainer.innerHTML = '<p>ライブパフォーマンスのヒントはありません。</p>';
+    // }
+
     console.log('性格・運勢タブの内容が更新されました。');
 }
 

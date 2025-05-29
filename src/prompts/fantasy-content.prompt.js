@@ -19,7 +19,8 @@ const FANTASY_CONTENT_SYSTEM_PROMPT = `
 特に、ファンが「ありそう！」「そんな一面も見てみたい！」と感じるような、解釈の余地を残しつつも具体的な描写を期待します。
 `;
 
-export function generateFantasyContentUserPrompt(name, data) {
+export function generateFantasyContentUserPrompt(formData, data) {
+  const name = `${formData.familyName} ${formData.firstName}`;
   const {
     comprehensiveData, // 総合的な占いデータ
     // 必要に応じて他のデータソースもここに追加

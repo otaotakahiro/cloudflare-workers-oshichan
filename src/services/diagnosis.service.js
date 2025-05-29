@@ -61,12 +61,28 @@ async function fetchAndProcessCategory(category, formData, externalSiteContents,
     console.log(`カテゴリ「${label}」の診断結果:`, JSON.stringify(diagnosisResult, null, 2));
     if (diagnosisResult.error) {
       console.error(`カテゴリ「${label}」のOpenAI APIからのエラー:`, diagnosisResult.error);
-      return { [`${Object.keys(category)[0]}Error`]: diagnosisResult.error }; // 例: personalityFortuneError
+      // エラーの場合は、エラー情報を持つオブジェクトを返す。キーはカテゴリキー + Error。
+      const errorKey = Object.keys(DIAGNOSIS_CATEGORIES(env)).find(key => DIAGNOSIS_CATEGORIES(env)[key].label === label);
+      return { [`${errorKey || 'unknownCategory'}Error`]: diagnosisResult.error };
     }
-    return diagnosisResult; // { personalityFortune: { ... } } または { loveTendency: { ... } }
+    // 成功時はカテゴリ名をキーとしたオブジェクトでラップして返す
+    const successKey = Object.keys(DIAGNOSIS_CATEGORIES(env)).find(key => DIAGNOSIS_CATEGORIES(env)[key].label === label);
+    if (successKey) {
+      // "性格・運勢" の場合は、diagnosisResult が既に personalityFortune でラップされているので、その中身を使う
+      // 他のカテゴリは、diagnosisResult がラップされていない素のJSONを期待する
+      if (label === '性格・運勢' && diagnosisResult[successKey]) {
+        return { [successKey]: diagnosisResult[successKey] };
+      }
+      // loveTendency や fantasyContent の場合、diagnosisResult は { loveTendencySummary: ... } のような素のJSON
+      // なので、そのまま successKey でラップする
+      return { [successKey]: diagnosisResult };
+    }
+    console.error(`カテゴリ「${label}」に対応する成功キーが見つかりませんでした。`);
+    return { error: `カテゴリ「${label}」のキー解決エラー` };
   } catch (error) {
     console.error(`カテゴリ「${label}」の診断中に予期せぬエラー:`, error);
-    return { [`${Object.keys(category)[0]}Error`]: `カテゴリ「${label}」の処理中にエラーが発生しました: ${error.message}` };
+    const errorKey = Object.keys(DIAGNOSIS_CATEGORIES(env)).find(key => DIAGNOSIS_CATEGORIES(env)[key].label === label);
+    return { [`${errorKey || 'unknownCategory'}Error`]: `カテゴリ「${label}」の処理中にエラーが発生しました: ${error.message}` };
   }
 }
 
