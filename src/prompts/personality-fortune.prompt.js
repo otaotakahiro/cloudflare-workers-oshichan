@@ -83,7 +83,7 @@ export const generatePersonalityFortuneUserPrompt = (formData, externalSiteConte
     "currentFortune": {
       "period": "現在の運気の流れを端的に表す言葉（例：飛躍期、準備期間、解放期など）。HTMLのID: current-fortune-period に対応します。**10字以内で記述してください**。",
       "overallText": "現在の全体的な運勢と、ファンが彼の活動を見守る上での心構えや期待ポイントを、**150字以内で記述してください**。HTMLのID: current-fortune-text に対応します。"
-    }/*,
+    },
     "futureTurningPoint": {
       "timing": "近い将来（例：半年後、1年後など）に訪れるかもしれない重要な転機の時期。HTMLのID: future-turning-point-period に対応します。",
       "description": "その転機がどのようなもので、彼のキャリアや人生にどんな影響を与えそうかの予測を記述してください。HTMLのID: future-turning-point-text に対応します。",
@@ -92,7 +92,7 @@ export const generatePersonalityFortuneUserPrompt = (formData, externalSiteConte
         "成長ポイント2。",
         "成長ポイント3。"
       ]
-    }*/
+    }
   }
 }
 \`\`\`
